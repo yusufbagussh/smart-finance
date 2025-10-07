@@ -1,0 +1,79 @@
+<?php
+
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\MachineLearningController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\TransactionController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profile Management
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Transaction Management
+    Route::resource('transactions', TransactionController::class);
+
+    // Budget Management
+    Route::resource('budgets', BudgetController::class);
+
+    // ML Features (Mock for now)
+    Route::get('/ml-features', [MachineLearningController::class, 'index'])->name('ml.index');
+    Route::post('/ml-features/classify', [MachineLearningController::class, 'classifyTransaction'])->name('ml.classify');
+    Route::get('/ml-features/predictions', [MachineLearningController::class, 'predictions'])->name('ml.predictions');
+    Route::get('/ml-features/recommendations', [MachineLearningController::class, 'recommendations'])->name('ml.recommendations');
+});
+
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Admin Routes (hanya untuk admin)
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    // Admin Dashboard
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    // User Management
+    Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('users.show');
+    Route::patch('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])->name('users.toggle-status');
+    Route::delete('/users/{user}', [UserManagementController::class, 'destroy'])->name('users.destroy');
+
+    // Category Management
+    Route::resource('categories', CategoryController::class);
+});
+
+Route::prefix('reports')->name('reports.')->group(function () {
+    // Main report page
+    Route::get('/', [ReportController::class, 'index'])->name('index');
+
+    // Excel Exports
+    Route::post('/export/transactions/excel', [ReportController::class, 'exportTransactionsExcel'])->name('transactions.excel');
+    Route::post('/export/financial-report/excel', [ReportController::class, 'exportFinancialReportExcel'])->name('financial-report.excel');
+
+    // PDF Exports
+    Route::post('/export/transactions/pdf', [ReportController::class, 'exportTransactionsPdf'])->name('transactions.pdf');
+    Route::post('/export/financial-report/pdf', [ReportController::class, 'exportFinancialReportPdf'])->name('financial-report.pdf');
+
+    // Preview PDF (opens in browser)
+    Route::post('/preview/transactions', [ReportController::class, 'previewTransactionsPdf'])->name('transactions.preview');
+});
+require __DIR__ . '/auth.php';
