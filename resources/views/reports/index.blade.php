@@ -1,4 +1,4 @@
-{{-- resources/views/reports/index.blade.php --}}
+{{-- resources/views/reports/index.blade.php - UPDATED dengan Template Options untuk Transaction Report --}}
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -24,7 +24,7 @@
                     Export detailed list of your transactions with filters. Choose between Excel or PDF format.
                 </p>
 
-                <form method="POST" action="{{ route('reports.transactions.excel') }}" x-data="{ format: 'excel' }">
+                <form method="POST" action="{{ route('reports.transactions.excel') }}" x-data="{ format: 'excel', template: 'enhanced' }">
                     @csrf
 
                     <!-- Filters -->
@@ -110,27 +110,90 @@
                         </div>
                     </div>
 
+                    <!-- PDF Template Selection -->
+                    <div x-show="format === 'pdf'" x-transition class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            📄 PDF Template Style
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="template" x-model="template" value="simple" class="sr-only">
+                                <div class="p-3 border-2 rounded-lg transition-colors"
+                                    :class="template === 'simple' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900' :
+                                        'border-gray-300 dark:border-gray-600 hover:border-blue-300'">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-alt text-blue-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-gray-100 text-sm">Simple</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Basic layout</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer">
+                                <input type="radio" name="template" x-model="template" value="enhanced"
+                                    class="sr-only">
+                                <div class="p-3 border-2 rounded-lg transition-colors"
+                                    :class="template === 'enhanced' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900' :
+                                        'border-gray-300 dark:border-gray-600 hover:border-blue-300'">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-chart-line text-blue-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-gray-100 text-sm">Enhanced ⭐
+                                            </p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">With insights</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Template Preview Info -->
+                        <div x-show="template === 'enhanced'"
+                            class="mt-3 p-3 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-star text-blue-600 dark:text-blue-400 mr-2 mt-0.5"></i>
+                                <div class="text-xs text-blue-800 dark:text-blue-200">
+                                    <strong>Enhanced template includes:</strong>
+                                    <ul class="list-disc ml-4 mt-1">
+                                        <li>Visual summary cards with gradients</li>
+                                        <li>Key statistics & insights</li>
+                                        <li>Transaction pattern analysis</li>
+                                        <li>Category breakdown with progress bars</li>
+                                        <li>Professional styling & watermark</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Submit Buttons -->
                     <div class="flex flex-col sm:flex-row gap-3">
                         <button type="submit"
-                            @click="$el.form.action = format === 'excel' ? '{{ route('reports.transactions.excel') }}' : '{{ route('reports.transactions.pdf') }}'"
+                            @click="if(format === 'pdf') {
+                                $el.form.action = template === 'enhanced' ? '{{ route('reports.transactions.pdf') }}' : '{{ route('reports.transactions.pdf') }}'
+                            } else {
+                                $el.form.action = '{{ route('reports.transactions.excel') }}'
+                            }"
                             class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-blue-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             <i class="fas fa-download mr-2"></i>
-                            <span x-text="format === 'excel' ? 'Download Excel' : 'Download PDF'"></span>
+                            <span
+                                x-text="format === 'excel' ? 'Download Excel' : (template === 'enhanced' ? 'Download Enhanced PDF' : 'Download Simple PDF')"></span>
                         </button>
 
-                        <button type="button" x-show="format === 'pdf'"
+                        {{-- <button type="button" x-show="format === 'pdf'"
                             @click="$el.form.action = '{{ route('reports.transactions.preview') }}'; $el.form.submit()"
                             class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             <i class="fas fa-eye mr-2"></i>
                             Preview PDF
-                        </button>
+                        </button> --}}
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Financial Report -->
+        <!-- Financial Report with Template Selection -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center mb-4">
@@ -146,7 +209,7 @@
                     Comprehensive financial report with summary, income/expense breakdown, and category analysis.
                 </p>
 
-                <form method="POST" action="{{ route('reports.financial-report.excel') }}" x-data="{ format: 'excel' }">
+                <form method="POST" action="{{ route('reports.financial-report.excel') }}" x-data="{ format: 'excel', template: 'enhanced' }">
                     @csrf
 
                     <!-- Date Range -->
@@ -225,6 +288,66 @@
                         </div>
                     </div>
 
+                    <!-- PDF Template Selection -->
+                    <div x-show="format === 'pdf'" x-transition class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            📊 PDF Template Style
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="template" x-model="template" value="simple"
+                                    class="sr-only">
+                                <div class="p-3 border-2 rounded-lg transition-colors"
+                                    :class="template === 'simple' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900' :
+                                        'border-gray-300 dark:border-gray-600 hover:border-purple-300'">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-file-alt text-purple-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-gray-100 text-sm">Simple
+                                            </p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">Basic layout</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="cursor-pointer">
+                                <input type="radio" name="template" x-model="template" value="enhanced"
+                                    class="sr-only">
+                                <div class="p-3 border-2 rounded-lg transition-colors"
+                                    :class="template === 'enhanced' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900' :
+                                        'border-gray-300 dark:border-gray-600 hover:border-purple-300'">
+                                    <div class="flex items-center">
+                                        <i class="fas fa-chart-bar text-purple-600 text-xl mr-3"></i>
+                                        <div>
+                                            <p class="font-semibold text-gray-900 dark:text-gray-100 text-sm">Enhanced
+                                                ⭐</p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-400">With insights</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <!-- Template Preview Info -->
+                        <div x-show="template === 'enhanced'"
+                            class="mt-3 p-3 bg-purple-50 dark:bg-purple-900 border border-purple-200 dark:border-purple-700 rounded-lg">
+                            <div class="flex">
+                                <i class="fas fa-star text-purple-600 dark:text-purple-400 mr-2 mt-0.5"></i>
+                                <div class="text-xs text-purple-800 dark:text-purple-200">
+                                    <strong>Enhanced template includes:</strong>
+                                    <ul class="list-disc ml-4 mt-1">
+                                        <li>Visual summary cards with gradients</li>
+                                        <li>Key statistics & insights</li>
+                                        <li>Financial recommendations</li>
+                                        <li>Category progress bars</li>
+                                        <li>Professional styling & watermark</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Info Box -->
                     <div
                         class="mb-6 p-3 bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg">
@@ -240,48 +363,138 @@
                     </div>
 
                     <!-- Submit Button -->
-                    <button type="submit"
-                        @click="$el.form.action = format === 'excel' ? '{{ route('reports.financial-report.excel') }}' : '{{ route('reports.financial-report.pdf') }}'"
-                        class="w-full inline-flex items-center justify-center px-4 py-3 bg-purple-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-purple-700 focus:bg-purple-700 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        <i class="fas fa-download mr-2"></i>
-                        <span x-text="format === 'excel' ? 'Download Excel Report' : 'Download PDF Report'"></span>
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="submit"
+                            @click="$el.form.action = format === 'excel' ? '{{ route('reports.financial-report.excel') }}' : '{{ route('reports.financial-report.pdf') }}'"
+                            class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-purple-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-purple-700 focus:bg-purple-700 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <i class="fas fa-download mr-2"></i>
+                            <span
+                                x-text="format === 'excel' ? 'Download Excel Report' : (template === 'enhanced' ? 'Download Enhanced PDF' : 'Download Simple PDF')"></span>
+                        </button>
+
+                        <button type="button" x-show="format === 'pdf'"
+                            @click="$el.form.action = '{{ route('reports.financial-report.preview') }}'; $el.form.submit()"
+                            class="flex-1 inline-flex items-center justify-center px-4 py-3 bg-gray-600 border border-transparent rounded-md font-semibold text-sm text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            <i class="fas fa-eye mr-2"></i>
+                            Preview PDF
+                        </button>
+                    </div>
+
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Export History (Optional) -->
+    <!-- Features Comparison -->
     <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                <i class="fas fa-history mr-2"></i>
-                About Export Features
+                <i class="fas fa-table mr-2"></i>
+                Report Features Comparison
             </h3>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Transaction Report</h4>
-                    <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <li>• Detailed transaction list</li>
-                        <li>• Filter by type, category, and date</li>
-                        <li>• Excel: Single sheet with all data</li>
-                        <li>• PDF: Formatted for printing</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Financial Report</h4>
-                    <ul class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                        <li>• Comprehensive financial summary</li>
-                        <li>• Income and expense breakdown</li>
-                        <li>• Excel: 4 sheets (Summary, Income, Expense, Categories)</li>
-                        <li>• PDF: Professional formatted report</li>
-                    </ul>
-                </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead class="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                            <th
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Feature</th>
+                            <th
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Transaction<br>Excel</th>
+                            <th
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Transaction<br>PDF Simple</th>
+                            <th
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Transaction<br>PDF Enhanced</th>
+                            <th
+                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Financial<br>PDF Enhanced</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Transaction List</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Summary Statistics</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Category Breakdown</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Visual Summary Cards</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Key Statistics Dashboard
+                            </td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Transaction Insights</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Progress Bars & Visual
+                                Elements</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Filter Information Display
+                            </td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Professional Watermark</td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">Financial Recommendations
+                            </td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-times text-red-600"></i></td>
+                            <td class="px-6 py-4 text-center"><i class="fas fa-check text-green-600"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+
     @push('scripts')
         <script>
             function setDateRange(period) {

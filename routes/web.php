@@ -12,7 +12,8 @@ use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    //return to route dashboard
+    return redirect()->route('dashboard');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
@@ -61,7 +62,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('categories', CategoryController::class);
 });
 
-Route::prefix('reports')->name('reports.')->group(function () {
+Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function () {
     // Main report page
     Route::get('/', [ReportController::class, 'index'])->name('index');
 
@@ -70,10 +71,11 @@ Route::prefix('reports')->name('reports.')->group(function () {
     Route::post('/export/financial-report/excel', [ReportController::class, 'exportFinancialReportExcel'])->name('financial-report.excel');
 
     // PDF Exports
-    Route::post('/export/transactions/pdf', [ReportController::class, 'exportTransactionsPdf'])->name('transactions.pdf');
-    Route::post('/export/financial-report/pdf', [ReportController::class, 'exportFinancialReportPdf'])->name('financial-report.pdf');
+    Route::post('/export/transactions/pdf', [ReportController::class, 'exportTransactionsPdfEnhanced'])->name('transactions.pdf');
+    Route::post('/export/financial-report/pdf', [ReportController::class, 'exportFinancialReportPdfEnhanced'])->name('financial-report.pdf');
 
     // Preview PDF (opens in browser)
     Route::post('/preview/transactions', [ReportController::class, 'previewTransactionsPdf'])->name('transactions.preview');
+    Route::post('/preview/financial-report', [ReportController::class, 'previewFinancialReportPdf'])->name('financial-report.preview');
 });
 require __DIR__ . '/auth.php';

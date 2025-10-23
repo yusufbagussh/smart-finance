@@ -6,6 +6,8 @@ use App\Models\Transaction;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MachineLearningController extends Controller
 {
@@ -33,51 +35,52 @@ class MachineLearningController extends Controller
     {
         $description = $request->input('description', '');
 
-        // Mock auto-classification logic
-        $mockClassifications = [
-            'gaji' => 'Salary',
-            'grabfood' => 'Food & Dining',
-            'gofood' => 'Food & Dining',
-            'mcdonald' => 'Food & Dining',
-            'kfc' => 'Food & Dining',
-            'grab' => 'Transportation',
-            'gojek' => 'Transportation',
-            'uber' => 'Transportation',
-            'spotify' => 'Entertainment',
-            'netflix' => 'Entertainment',
-            'youtube' => 'Entertainment',
-            'tokopedia' => 'Shopping',
-            'shopee' => 'Shopping',
-            'lazada' => 'Shopping',
-            'indomaret' => 'Shopping',
-            'alfamart' => 'Shopping',
-            'hospital' => 'Health & Medical',
-            'doctor' => 'Health & Medical',
-            'pharmacy' => 'Health & Medical',
-            'listrik' => 'Bills & Utilities',
-            'pdam' => 'Bills & Utilities',
-            'telkom' => 'Bills & Utilities',
-        ];
+        // --- HAPUS LOGIKA MOCK LAMA ---
+        /* $mockClassifications = [ ... ];
+        foreach ($mockClassifications as $keyword => $categoryName) { ... }
+        */
+        // --- AKHIR LOGIKA MOCK LAMA ---
 
-        $suggestedCategory = 'Other Expense';
-        $confidence = 0.5;
 
-        foreach ($mockClassifications as $keyword => $categoryName) {
-            if (stripos($description, $keyword) !== false) {
-                $suggestedCategory = $categoryName;
-                $confidence = rand(80, 95) / 100;
-                break;
+        // --- LOGIKA API PYTHON BARU ---
+        try {
+            // 1. Panggil API Python (Flask) Anda
+            $response = Http::post('http://127.0.0.1:5000/classify', [
+                'description' => $description,
+            ]);
+
+            // 2. Periksa apakah panggilan API sukses
+            if ($response->successful()) {
+                $mlResult = $response->json();
+
+                // 3. Dapatkan nama kategori dari hasil ML
+                $suggestedCategoryName = $mlResult['category_name'] ?? 'Other Expense';
+
+                // 4. Cari Category ID di database Laravel berdasarkan nama
+                //    Ini sama seperti logika Anda sebelumnya
+                $category = Category::where('name', $suggestedCategoryName)->first();
+
+                // 5. Kembalikan JSON ke frontend (create.blade.php)
+                return response()->json([
+                    'suggested_category' => $category ? $category->category_id : null,
+                    'category_name' => $suggestedCategoryName,
+                    'confidence' => $mlResult['confidence'] ?? 0.5,
+                    'explanation' => $mlResult['explanation'] ?? 'Classification failed.',
+                ]);
             }
+        } catch (\Exception $e) {
+            // (Opsional) Catat error jika API Python mati atau error
+            Log::error('ML API Classification Failed: ' . $e->getMessage());
         }
 
-        $category = Category::where('name', $suggestedCategory)->first();
-
+        // Jika API gagal, kembalikan respon default
+        // agar frontend tidak rusak
         return response()->json([
-            'suggested_category' => $category ? $category->category_id : null,
-            'category_name' => $suggestedCategory,
-            'confidence' => $confidence,
-            'explanation' => "Based on keywords in the description, this transaction is likely related to {$suggestedCategory}."
-        ]);
+            'suggested_category' => null,
+            'category_name' => 'Error',
+            'confidence' => 0,
+            'explanation' => 'Could not connect to classification service.',
+        ], 500);
     }
 
     public function predictions()
@@ -85,6 +88,63 @@ class MachineLearningController extends Controller
         $predictions = $this->getMockPredictions();
         return view('ml.predictions', compact('predictions'));
     }
+
+    // public function predictions()
+    // {
+    //     // --- LOGIKA BARU YANG LEBIH EFISIEN ---
+
+    //     // 1. Ambil riwayat transaksi, TAPI SUDAH DI-AGREGASI (DIJUMLAHKAN) PER HARI
+    //     // Query ini meminta database untuk:
+    //     // - Mengambil HANYA PENGELUARAN (expense)
+    //     // - Mengelompokkannya berdasarkan TANGGAL (GROUP BY date)
+    //     // - Menjumlahkan total 'amount' untuk setiap hari itu (SUM(amount))
+
+    //     $dailySpending = auth()->user()->transactions()
+    //         ->where('type', 'expense')
+    //         // 'DATE(date)' -> memastikan kita mengabaikan jam/menit/detik
+    //         ->selectRaw('DATE(date) as date, SUM(amount) as amount')
+    //         ->groupBy('date') // Ini adalah kunci efisiensinya
+    //         ->orderBy('date', 'asc')
+    //         ->get()
+    //         ->toArray(); // Hasilnya: [{date: '2025-01-01', amount: 150000}, {date: '2025-01-02', amount: 75000}, ...]
+    //     // Dengan cara ini, bahkan jika Anda punya 100.000 transaksi
+    //     // selama 3 tahun, Anda hanya akan mengirim ~1095 baris data (365 hari * 3).
+    //     // Ini SANGAT ringan dan cepat.
+
+    //     $forecastData = [];
+    //     $nextMonthPrediction = "Rp 0";
+    //     // Hanya panggil API jika user punya data (misal: lebih dari 10 hari transaksi)
+    //     if (count($dailySpending) > 10) {
+    //         try {
+    //             // 2. Panggil API Python /predict dengan data yang SUDAH DIJUMLAHKAN
+    //             $response = Http::post('http://127.0.0.1:5000/predict', $dailySpending); // $dailySpending, BUKAN $transactions
+    //             // dd($response->json());
+    //             if ($response->successful()) {
+    //                 $data = $response->json();
+    //                 $forecastData = $data['forecast_data'] ?? [];
+    //                 $nextMonthPrediction = $data['next_month_total'] ?? "Error";
+    //             } else {
+    //                 $nextMonthPrediction = "Error: Service not responding";
+    //             }
+    //         } catch (\Exception $e) {
+    //             $nextMonthPrediction = "Error: " . $e->getMessage();
+    //         }
+    //     } else {
+    //         $nextMonthPrediction = "Butuh lebih banyak data transaksi untuk prediksi.";
+    //     }
+
+    //     // dd([
+    //     //     'forecastData' => $forecastData,
+    //     //     'nextMonthPrediction' => $nextMonthPrediction
+    //     // ]);
+
+    //     // 3. Kirim data ke view
+    //     return view('ml.predictions', [
+    //         'forecastData' => $forecastData,
+    //         'nextMonthPrediction' => $nextMonthPrediction
+    //     ]);
+    // }
+
 
     public function recommendations()
     {

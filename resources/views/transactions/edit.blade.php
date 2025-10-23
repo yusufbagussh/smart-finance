@@ -1,4 +1,4 @@
-{{-- resources/views/transactions/edit.blade.php --}}
+{{-- resources/views/transactions/edit.blade.php - FIXED VERSION --}}
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center">
@@ -14,20 +14,20 @@
     <div class="max-w-2xl mx-auto">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
-                <form method="POST" action="{{ route('transactions.update', $transaction) }}">
+                <form method="POST" action="{{ route('transactions.update', $transaction) }}" x-data="transactionEditForm()">
                     @csrf
                     @method('PUT')
 
                     <!-- Transaction Type -->
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-3">Transaction
-                            Type</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Transaction Type</label>
                         <div class="grid grid-cols-2 gap-3">
                             <label class="cursor-pointer">
-                                <input type="radio" name="type" value="income" class="sr-only"
+                                <input type="radio" name="type" value="income" x-model="type" class="sr-only"
                                     {{ old('type', $transaction->type) === 'income' ? 'checked' : '' }}>
-                                <div
-                                    class="p-4 border-2 rounded-lg text-center transition-colors {{ old('type', $transaction->type) === 'income' ? 'border-green-500 bg-green-50 text-green-700' : 'border-gray-300' }}">
+                                <div class="p-4 border-2 rounded-lg text-center transition-colors"
+                                    :class="type === 'income' ? 'border-green-500 bg-green-50 text-green-700' :
+                                        'border-gray-300 hover:border-green-300'">
                                     <i class="fas fa-arrow-up text-2xl mb-2 text-green-600"></i>
                                     <p class="font-semibold">Income</p>
                                     <p class="text-xs text-gray-500">Money received</p>
@@ -35,10 +35,11 @@
                             </label>
 
                             <label class="cursor-pointer">
-                                <input type="radio" name="type" value="expense" class="sr-only"
+                                <input type="radio" name="type" value="expense" x-model="type" class="sr-only"
                                     {{ old('type', $transaction->type) === 'expense' ? 'checked' : '' }}>
-                                <div
-                                    class="p-4 border-2 rounded-lg text-center transition-colors {{ old('type', $transaction->type) === 'expense' ? 'border-red-500 bg-red-50 text-red-700' : 'border-gray-300' }}">
+                                <div class="p-4 border-2 rounded-lg text-center transition-colors"
+                                    :class="type === 'expense' ? 'border-red-500 bg-red-50 text-red-700' :
+                                        'border-gray-300 hover:border-red-300'">
                                     <i class="fas fa-arrow-down text-2xl mb-2 text-red-600"></i>
                                     <p class="font-semibold">Expense</p>
                                     <p class="text-xs text-gray-500">Money spent</p>
@@ -138,4 +139,12 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function transactionEditForm() {
+            return {
+                type: '{{ old('type', $transaction->type) }}'
+            }
+        }
+    </script>
 </x-app-layout>
