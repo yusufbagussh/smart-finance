@@ -2,8 +2,7 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center">
-            <a href="{{ route('budgets.index') }}"
-                class="mr-4 text-gray-600 hover:text-gray-900">
+            <a href="{{ route('budgets.index') }}" class="mr-4 text-gray-600 hover:text-gray-900">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -64,14 +63,35 @@
                         </p>
                     </div>
 
+                    <div class="mb-6">
+                        <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select name="category_id" id="category_id" disabled
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">Select a category</option>
+                            {{-- Loop melalui $categories dari controller --}}
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->category_id }}" {{-- Pilih kategori yang sesuai dengan budget saat ini --}}
+                                    {{ old('category_id', $budget->category_id) == $category->category_id ? 'selected' : '' }}>
+                                    {{-- Tampilkan icon jika ada --}}
+                                    {!! $category->icon ?? '' !!} {{ $category->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('category_id')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Select the spending category for this budget.
+                        </p>
+                    </div>
+
                     <!-- Budget Limit -->
                     <div class="mb-6">
                         <label for="limit" class="block text-sm font-medium text-gray-700 mb-2">
                             Monthly Budget Limit (IDR)
                         </label>
                         <div class="relative">
-                            <span
-                                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
                             <input type="number" name="limit" id="limit"
                                 value="{{ old('limit', $budget->limit) }}" step="1000" min="1000"
                                 class="pl-10 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
@@ -84,11 +104,9 @@
 
                     <!-- Budget Impact Warning -->
                     @if ($budget->spent > 0)
-                        <div
-                            class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                             <div class="flex">
-                                <i
-                                    class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
+                                <i class="fas fa-exclamation-triangle text-yellow-600 mt-1 mr-3"></i>
                                 <div>
                                     <h4 class="text-sm font-semibold text-yellow-800 mb-1">Budget
                                         Change Impact</h4>

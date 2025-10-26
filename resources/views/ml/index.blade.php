@@ -20,148 +20,183 @@
             </p>
         </div>
     </div>
-
-    <!-- Feature Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-        <!-- Auto Classification -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center mb-4">
-                    <div class="p-3 rounded-full bg-blue-100">
-                        <i class="fas fa-tags text-blue-600 text-xl"></i>
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                        <i class="fas fa-tags text-blue-600 dark:text-blue-400 text-xl"></i>
                     </div>
-                    <h3 class="ml-3 text-lg font-semibold text-gray-900">
+                    <h3 class="ml-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Auto Classification
                     </h3>
                 </div>
 
-                <div class="space-y-3 mb-4">
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Total Transactions:</span>
-                        <span class="font-semibold">{{ $classificationStats['total_transactions'] }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Auto-Classified:</span>
-                        <span class="font-semibold text-blue-600">{{ $classificationStats['auto_classified'] }}%</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span class="text-sm text-gray-600">Accuracy Rate:</span>
-                        <span class="font-semibold text-green-600">{{ $classificationStats['accuracy_rate'] }}%</span>
-                    </div>
+                {{-- Hapus Statistik Mock --}}
+                {{-- <div class="space-y-3 mb-4"> ... </div> --}}
+                {{-- <div class="w-full bg-gray-200 ..."> ... </div> --}}
+
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Automatically categorizes your transactions as you add them using a Naive Bayes model trained on
+                    your data.
+                </p>
+                <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    <span class="font-semibold">{{ $classificationStats['total_transactions'] }}</span> transactions
+                    processed.
                 </div>
 
-                <!-- Progress Bar -->
-                <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
-                    <div class="bg-blue-500 h-2 rounded-full"
-                        style="width: {{ $classificationStats['auto_classified'] }}%"></div>
-                </div>
 
-                <!-- Test Classification -->
-                <div class="border-t border-gray-200 pt-4">
-                    <h4 class="font-semibold text-gray-900 mb-2">Test Classification</h4>
+                <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <h4 class="font-semibold text-gray-900 dark:text-gray-100 mb-2">Test Classification</h4>
+                    {{-- Alpine JS component (pastikan Alpine.js terinstal) --}}
                     <div x-data="classificationTest()">
-                        <input type="text" x-model="testDescription" @input="debounceTest()"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                            placeholder="Type a transaction description...">
+                        <input type="text" x-model="testDescription" @input.debounce.500ms="testClassification"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Type a description (e.g., Gofood Nasi Goreng)">
 
-                        <div x-show="result.category_name" x-transition class="mt-2 p-2 bg-gray-50 rounded text-sm">
-                            <span class="font-medium" x-text="result.category_name"></span>
-                            <span class="text-gray-500"> (</span>
-                            <span class="text-green-600" x-text="Math.round(result.confidence * 100) + '%'"></span>
-                            <span class="text-gray-500">)</span>
+                        {{-- Hasil Prediksi (Format Baru) --}}
+                        <div x-show="!isLoading && (resultCategory || resultType || errorText)" x-transition
+                            class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded text-sm space-y-1">
+                            {{-- Tampilkan Error jika ada --}}
+                            <p x-show="errorText" class="text-red-500" x-text="errorText"></p>
+
+                            {{-- Tampilkan Hasil Kategori --}}
+                            <div x-show="resultCategory">
+                                <span class="font-medium text-gray-800 dark:text-gray-100">Category:</span>
+                                <span class="font-semibold text-blue-600 dark:text-blue-400"
+                                    x-text="resultCategory"></span>
+                                <span class="text-gray-500 dark:text-gray-400">(<span
+                                        class="text-green-600 dark:text-green-400"
+                                        x-text="resultConfidenceCategory"></span>)</span>
+                            </div>
+
+                            {{-- Tampilkan Hasil Tipe --}}
+                            <div x-show="resultType">
+                                <span class="font-medium text-gray-800 dark:text-gray-100">Type:</span>
+                                <span class="font-semibold"
+                                    :class="resultType === 'income' ? 'text-green-600 dark:text-green-400' :
+                                        'text-red-600 dark:text-red-400'"
+                                    x-text="resultType"></span>
+                                <span class="text-gray-500 dark:text-gray-400">(<span
+                                        class="text-green-600 dark:text-green-400"
+                                        x-text="resultConfidenceType"></span>)</span>
+                            </div>
+                        </div>
+                        {{-- Tampilkan Spinner saat loading --}}
+                        <div x-show="isLoading" class="mt-2 text-center text-gray-500">
+                            <i class="fas fa-spinner fa-spin text-lg"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Expense Predictions -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center mb-4">
-                    <div class="p-3 rounded-full bg-green-100">
-                        <i class="fas fa-chart-line text-green-600 text-xl"></i>
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                        <i class="fas fa-chart-line text-green-600 dark:text-green-400 text-xl"></i>
                     </div>
-                    <h3 class="ml-3 text-lg font-semibold text-gray-900">
+                    <h3 class="ml-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Expense Predictions
                     </h3>
                 </div>
 
-                <p class="text-sm text-gray-600 mb-4">
-                    AI-powered predictions for your next 3 months expenses based on historical data.
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    AI-powered forecast for your next 30 days of expenses based on historical daily spending.
                 </p>
 
-                <!-- Next Month Prediction -->
-                @if (isset($predictions[0]))
-                    <div class="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg mb-4">
-                        <div class="text-center">
-                            <p class="text-sm font-medium text-gray-700">Next Month
-                                ({{ $predictions[0]['month'] }})</p>
-                            <p class="text-2xl font-bold text-green-600">
-                                Rp {{ number_format($predictions[0]['predicted_expense'], 0, ',', '.') }}
-                            </p>
-                            <p class="text-xs text-gray-500">
-                                {{ $predictions[0]['confidence'] }}% confidence
-                            </p>
-                        </div>
+                <div
+                    class="bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 p-4 rounded-lg mb-4">
+                    <div class="text-center">
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Predicted Total (Next 30 Days)
+                        </p>
+                        {{-- Tampilkan hasil dari controller --}}
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            {{ $nextMonthPredictionSummary }}
+                        </p>
+                        {{-- Kita tidak dapat confidence dari API /predict yang disederhanakan --}}
+                        {{-- <p class="text-xs text-gray-500 dark:text-gray-400">...</p> --}}
+                        @if ($nextMonthPredictionSummary == 'Data Kurang')
+                            <p class="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Need more transaction data.</p>
+                        @elseif($nextMonthPredictionSummary == 'Error')
+                            <p class="text-xs text-red-600 dark:text-red-400 mt-1">Prediction currently unavailable.</p>
+                        @endif
                     </div>
-                @endif
+                </div>
 
-                <a href="{{ route('ml.predictions') }}"
+                <a href="{{ route('ml.predictions') }}" {{-- Pastikan nama route benar --}}
                     class="w-full inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <i class="fas fa-eye mr-2"></i>
                     View Detailed Predictions
                 </a>
             </div>
         </div>
-
-        <!-- Smart Recommendations -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center mb-4">
-                    <div class="p-3 rounded-full bg-purple-100">
-                        <i class="fas fa-lightbulb text-purple-600 text-xl"></i>
+                    <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                        <i class="fas fa-lightbulb text-purple-600 dark:text-purple-400 text-xl"></i>
                     </div>
-                    <h3 class="ml-3 text-lg font-semibold text-gray-900">
+                    <h3 class="ml-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
                         Smart Recommendations
                     </h3>
                 </div>
 
-                <p class="text-sm text-gray-600 mb-4">
-                    Get personalized tips to improve your financial health based on your spending patterns.
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Get personalized AI insights and tips based on your current month's spending.
                 </p>
 
-                <!-- Quick Recommendations Preview -->
-                <div class="space-y-2 mb-4">
-                    @foreach ($recommendations as $recommendation)
-                        <div class="p-3 bg-gray-50 rounded-lg">
-                            <div class="flex items-center justify-between">
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-medium text-gray-900">
-                                        @if ($recommendation['type'] === 'reduce_spending')
-                                            <i class="fas fa-arrow-down text-red-500 mr-1"></i>
-                                            Reduce {{ $recommendation['category'] }} spending
-                                        @elseif($recommendation['type'] === 'emergency_fund')
-                                            <i class="fas fa-piggy-bank text-green-500 mr-1"></i>
-                                            Build emergency fund
-                                        @endif
-                                    </p>
-                                    <p class="text-xs text-gray-500">
-                                        Potential savings: Rp
-                                        {{ number_format($recommendation['potential_savings'], 0, ',', '.') }}
-                                    </p>
-                                </div>
-                                <span
-                                    class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                    {{ $recommendation['priority'] === 'high' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                    {{ ucfirst($recommendation['priority']) }}
-                                </span>
+                <div class="space-y-3 mb-4">
+                    {{-- Loop melalui $recommendationPreview --}}
+                    @forelse ($recommendationPreview as $rec)
+                        @php
+                            // Logika icon & theme SAMA seperti di recommendations.blade.php
+                            $icon = 'fas fa-info-circle';
+                            $theme = 'blue';
+                            switch ($rec['type']) {
+                                case 'anomaly':
+                                    $icon = 'fas fa-exclamation-triangle';
+                                    $theme = 'yellow';
+                                    break;
+                                case 'budget_warning':
+                                    $icon = 'fas fa-fire';
+                                    $theme = 'red';
+                                    break;
+                                case 'category_insight':
+                                    $icon = 'fas fa-lightbulb';
+                                    $theme = 'blue';
+                                    break;
+                                case 'error':
+                                    $icon = 'fas fa-times-circle';
+                                    $theme = 'gray';
+                                    break;
+                                case 'info':
+                                default:
+                                    $icon = 'fas fa-check-circle';
+                                    $theme = 'green';
+                                    break;
+                            }
+                        @endphp
+                        <div
+                            class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-4 border-{{ $theme }}-500">
+                            <div class="flex items-center">
+                                <i class="{{ $icon }} text-{{ $theme }}-500 mr-2 flex-shrink-0"></i>
+                                <p class="text-sm text-gray-800 dark:text-gray-200">
+                                    {{-- Tampilkan pesan preview --}}
+                                    {{ Str::limit($rec['message'], 80) }} {{-- Batasi panjang teks --}}
+                                </p>
                             </div>
                         </div>
-                    @endforeach
+                    @empty
+                        <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-4 border-green-500">
+                            <p class="text-sm text-gray-800 dark:text-gray-200">No specific insights right now. Keep up
+                                the good work!</p>
+                        </div>
+                    @endforelse
                 </div>
 
-                <a href="{{ route('ml.recommendations') }}"
+                <a href="{{ route('ml.recommendations') }}" {{-- Pastikan nama route benar --}}
                     class="w-full inline-flex items-center justify-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 focus:bg-purple-700 active:bg-purple-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <i class="fas fa-eye mr-2"></i>
                     View All Recommendations
@@ -169,6 +204,7 @@
             </div>
         </div>
     </div>
+
 
     <!-- How It Works -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -215,44 +251,71 @@
         </div>
     </div>
 
+    {{-- Script untuk Classification Test --}}
     <script>
         function classificationTest() {
             return {
                 testDescription: '',
-                result: {},
+                // Pisahkan hasil agar lebih mudah diakses di HTML
+                resultCategory: null,
+                resultConfidenceCategory: null,
+                resultType: null,
+                resultConfidenceType: null,
+                // State management
+                isLoading: false,
+                errorText: '',
                 testTimeout: null,
 
-                debounceTest() {
-                    clearTimeout(this.testTimeout);
-                    this.testTimeout = setTimeout(() => {
-                        if (this.testDescription.length > 2) {
-                            this.testClassification();
-                        } else {
-                            this.result = {};
-                        }
-                    }, 500);
-                },
-
                 async testClassification() {
+                    // Reset state
+                    this.clearResult();
+                    if (this.testDescription.length < 3) return;
+
+                    this.isLoading = true;
+
                     try {
-                        const response = await fetch('{{ route('ml.classify') }}', {
+                        const response = await fetch('{{ route('ml.classify') }}', { // Pastikan route name benar
                             method: 'POST',
                             headers: {
+                                /* ... headers ... */
                                 'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
-                                    'content')
+                                    'content'),
+                                'Accept': 'application/json',
                             },
                             body: JSON.stringify({
                                 description: this.testDescription
                             })
                         });
 
+                        this.isLoading = false;
+                        const data = await response.json();
+
                         if (response.ok) {
-                            this.result = await response.json();
+                            // Isi properti hasil yang terpisah
+                            this.resultCategory = data.predicted_category;
+                            this.resultConfidenceCategory = `${Math.round(data.confidence_category * 100)}%`;
+                            this.resultType = data.predicted_type;
+                            this.resultConfidenceType = `${Math.round(data.confidence_type * 100)}%`;
+                            this.errorText = '';
+                        } else {
+                            this.errorText = data.error || `Error ${response.status}`;
+                            this.clearResult(false); // Clear result tapi jangan clear error
                         }
                     } catch (error) {
-                        console.log('Classification test failed:', error);
+                        console.error('Classification test failed:', error);
+                        this.isLoading = false;
+                        this.errorText = 'Network error or invalid response.';
+                        this.clearResult(false); // Clear result tapi jangan clear error
                     }
+                },
+                clearResult(clearError = true) { // Tambahkan opsi untuk tidak clear error
+                    this.resultCategory = null;
+                    this.resultConfidenceCategory = null;
+                    this.resultType = null;
+                    this.resultConfidenceType = null;
+                    this.isLoading = false;
+                    if (clearError) this.errorText = '';
                 }
             }
         }

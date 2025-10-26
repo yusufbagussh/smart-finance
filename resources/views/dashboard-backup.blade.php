@@ -11,7 +11,9 @@
         </div>
     </x-slot>
 
+    <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <!-- Total Balance -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
@@ -26,6 +28,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Monthly Income -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
@@ -39,6 +43,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Monthly Expense -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-red-100 dark:bg-red-900">
@@ -52,28 +58,28 @@
                 </div>
             </div>
         </div>
+
+        <!-- Budget Status -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
-                @php
-                    /* Logika icon & bg sama */
-                @endphp
-                <div class="p-3 rounded-full {{ $budgetBgClass ?? 'bg-yellow-100 dark:bg-yellow-900' }}">
+                <div
+                    class="p-3 rounded-full {{ $currentBudget && $currentBudget->isOverBudget() ? 'bg-red-100 dark:bg-red-900' : 'bg-yellow-100 dark:bg-yellow-900' }}">
                     <i
-                        class="fas fa-bullseye {{ $budgetIconClass ?? 'text-yellow-600 dark:text-yellow-400' }} text-xl"></i>
+                        class="fas fa-chart-pie {{ $currentBudget && $currentBudget->isOverBudget() ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400' }} text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Budget Status</p>
-                    @if ($budgetSummary)
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Budget Status</p>
+                    @if ($currentBudget)
                         <p
-                            class="text-xl font-bold {{ $budgetSummary->isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                            {{ number_format($budgetSummary->progress, 1) }}%
+                            class="text-xl font-bold {{ $currentBudget->isOverBudget() ? 'text-red-600 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400' }}">
+                            {{ number_format($currentBudget->progressPercentage(), 1) }}%
                         </p>
                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                            Rp {{ number_format(abs($budgetSummary->remaining), 0, ',', '.') }}
-                            {{ $budgetSummary->isOverBudget ? 'over budget' : 'remaining' }}
+                            Rp {{ number_format($currentBudget->remainingBudget(), 0, ',', '.') }}
+                            {{ $currentBudget->isOverBudget() ? 'over budget' : 'remaining' }}
                         </p>
                     @else
-                        <p class="text-xl font-bold text-gray-600 dark:text-gray-400">No Budget Set</p>
+                        <p class="text-xl font-bold text-gray-600 dark:text-gray-400">No Budget</p>
                         <a href="{{ route('budgets.create') }}"
                             class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Set Budget</a>
                     @endif
@@ -82,35 +88,22 @@
         </div>
     </div>
 
+    <!-- Charts and Recent Transactions -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Monthly Trend Chart -->
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
-                {{-- Filter Buttons --}}
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        <i class="fas fa-chart-line mr-2"></i>
-                        {{-- Judul dinamis dari controller --}}
-                        {{ $chartTitle }}
-                    </h3>
-                    {{-- Tombol Filter --}}
-                    <div class="flex space-x-2">
-                        <a href="{{ route('dashboard', ['filter' => 'daily']) }}"
-                            class="px-3 py-1 rounded-md text-xs font-medium transition-colors {{ $filter === 'daily' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-                            7 Days
-                        </a>
-                        <a href="{{ route('dashboard', ['filter' => 'monthly']) }}"
-                            class="px-3 py-1 rounded-md text-xs font-medium transition-colors {{ $filter === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-                            6 Months
-                        </a>
-                    </div>
-                </div>
-                {{-- Chart Canvas --}}
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Monthly Trend (Last 6 Months)
+                </h3>
                 <div class="relative h-64">
-                    <canvas id="trendChart"></canvas> {{-- Ganti ID agar lebih generik --}}
+                    <canvas id="monthlyChart"></canvas>
                 </div>
             </div>
         </div>
 
+        <!-- Recent Transactions -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
@@ -123,21 +116,22 @@
                         View All
                     </a>
                 </div>
+
                 @if ($recentTransactions->count() > 0)
                     <div class="space-y-3">
                         @foreach ($recentTransactions as $transaction)
                             <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm"
-                                        style="background-color: {{ $transaction->category->color ?? '#cccccc' }}20; color: {{ $transaction->category->color ?? '#666666' }}">
-                                        {!! $transaction->category->icon ?? '<i class="fas fa-question"></i>' !!}
+                                        style="background-color: {{ $transaction->category->color }}20; color: {{ $transaction->category->color }}">
+                                        {{ $transaction->category->icon }}
                                     </div>
                                     <div class="ml-3">
                                         <p class="text-sm font-medium text-gray-900 dark:text-gray-100">
                                             {{ Str::limit($transaction->description, 20) }}
                                         </p>
                                         <p class="text-xs text-gray-500 dark:text-gray-400">
-                                            {{ $transaction->category->name ?? 'N/A' }} •
+                                            {{ $transaction->category->name }} •
                                             {{ $transaction->date->format('M d') }}
                                         </p>
                                     </div>
@@ -166,44 +160,35 @@
         </div>
     </div>
 
+    <!-- Category Breakdown and Budget Progress -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Category Breakdown -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
                     <i class="fas fa-chart-pie mr-2"></i>
                     Expense Categories (This Month)
                 </h3>
+
                 @if ($categoryBreakdown->count() > 0)
                     <div class="relative h-64 mb-4">
                         <canvas id="categoryChart"></canvas>
                     </div>
+
                     <div class="space-y-2">
-                        @foreach ($categoryBreakdown->take(5) as $item)
+                        @foreach ($categoryBreakdown->take(5) as $category)
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center">
                                     <div class="w-3 h-3 rounded-full mr-2"
-                                        style="background-color: {{ $item->category->color ?? '#cccccc' }}"></div>
+                                        style="background-color: {{ $category->category->color }}"></div>
                                     <span
-                                        class="text-sm text-gray-700 dark:text-gray-300">{{ $item->category->name ?? 'N/A' }}</span>
+                                        class="text-sm text-gray-700 dark:text-gray-300">{{ $category->category->name }}</span>
                                 </div>
                                 <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    Rp {{ number_format($item->total, 0, ',', '.') }}
-                                    ({{ number_format(($item->total / max($monthlyExpense, 1)) * 100, 1) }}%)
+                                    Rp {{ number_format($category->total, 0, ',', '.') }}
                                 </span>
                             </div>
                         @endforeach
-                        @if ($categoryBreakdown->count() > 5)
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 rounded-full mr-2 bg-gray-400"></div>
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Others</span>
-                                </div>
-                                <span class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    Rp {{ number_format($categoryBreakdown->slice(5)->sum('total'), 0, ',', '.') }}
-                                    ({{ number_format(($categoryBreakdown->slice(5)->sum('total') / max($monthlyExpense, 1)) * 100, 1) }}%)
-                                </span>
-                            </div>
-                        @endif
                     </div>
                 @else
                     <div class="text-center py-8">
@@ -214,15 +199,15 @@
             </div>
         </div>
 
+        <!-- Budget Progress - content sama seperti sebelumnya -->
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        <i class="fas fa-tasks mr-2"></i>
-                        Budget Progress by Category
+                        <i class="fas fa-bullseye mr-2"></i>
+                        Budget Progress
                     </h3>
-                    {{-- Tombol "Set Budget" hanya jika TIDAK ADA budget sama sekali --}}
-                    @if ($currentMonthBudgets->isEmpty() && !$budgetSummary)
+                    @if (!$currentBudget)
                         <a href="{{ route('budgets.create') }}"
                             class="text-blue-600 dark:text-blue-400 hover:underline text-sm">
                             Set Budget
@@ -230,55 +215,49 @@
                     @endif
                 </div>
 
-                {{-- Cek apakah ada budget yang diatur untuk bulan ini --}}
-                @if ($currentMonthBudgets->isNotEmpty())
-                    <div class="space-y-5 max-h-96 overflow-y-auto pr-2"> {{-- Added max height and scroll --}}
-                        {{-- Loop melalui setiap budget kategori bulan ini --}}
-                        @foreach ($currentMonthBudgets as $budget)
-                            <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                                {{-- Nama Kategori dan Limit --}}
-                                <div class="flex justify-between items-center mb-1">
-                                    <span
-                                        class="font-medium text-gray-800 dark:text-gray-200">{{ $budget->category->name ?? 'Uncategorized' }}</span>
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Limit: Rp
-                                        {{ number_format($budget->limit, 0, ',', '.') }}</span>
-                                </div>
-
-                                {{-- Progress Bar --}}
-                                @php
-                                    $progress = $budget->progressPercentage();
-                                    $barColor = $budget->isOverBudget() ? 'bg-red-500' : 'bg-blue-500';
-                                    $width = $budget->isOverBudget() ? 100 : min($progress, 100); // Width capped at 100%
-                                @endphp
-                                <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mb-1">
-                                    <div class="h-3 rounded-full {{ $barColor }}"
-                                        style="width: {{ $width }}%"></div>
-                                </div>
-
-                                {{-- Detail Spent vs Remaining/Over --}}
-                                <div class="flex justify-between items-center text-sm">
-                                    <span class="text-gray-600 dark:text-gray-400">
-                                        Spent: Rp {{ number_format($budget->spent, 0, ',', '.') }}
-                                        ({{ number_format($progress, 1) }}%)
-                                    </span>
-                                    <span
-                                        class="{{ $budget->isOverBudget() ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                                        {{ $budget->isOverBudget() ? 'Over by' : 'Remaining' }}: Rp
-                                        {{ number_format(abs($budget->remainingBudget()), 0, ',', '.') }}
-                                    </span>
-                                </div>
+                @if ($currentBudget)
+                    <!-- Budget content same as before -->
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Monthly Budget</span>
+                                <span class="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                    Rp {{ number_format($currentBudget->limit, 0, ',', '.') }}
+                                </span>
                             </div>
-                        @endforeach
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-sm text-gray-600 dark:text-gray-400">Spent</span>
+                                <span
+                                    class="text-lg font-bold {{ $currentBudget->isOverBudget() ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400' }}">
+                                    Rp {{ number_format($currentBudget->spent, 0, ',', '.') }}
+                                </span>
+                            </div>
+
+                            <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3 mb-2">
+                                <div class="h-3 rounded-full {{ $currentBudget->isOverBudget() ? 'bg-red-500' : 'bg-blue-500' }}"
+                                    style="width: {{ min($currentBudget->progressPercentage(), 100) }}%"></div>
+                            </div>
+
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600 dark:text-gray-400">
+                                    {{ number_format($currentBudget->progressPercentage(), 1) }}% used
+                                </span>
+                                <span
+                                    class="{{ $currentBudget->isOverBudget() ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                    {{ $currentBudget->isOverBudget() ? 'Over by' : 'Remaining' }}:
+                                    Rp {{ number_format(abs($currentBudget->remainingBudget()), 0, ',', '.') }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 @else
-                    {{-- Tampilan jika tidak ada budget sama sekali --}}
                     <div class="text-center py-8">
                         <i class="fas fa-bullseye text-gray-400 text-4xl mb-4"></i>
-                        <p class="text-gray-500 dark:text-gray-400 mb-4">No budgets set for this month</p>
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">No budget set for this month</p>
                         <a href="{{ route('budgets.create') }}"
-                            class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                            class="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                             <i class="fas fa-plus mr-2"></i>
-                            Set Budget
+                            Set Monthly Budget
                         </a>
                     </div>
                 @endif
@@ -286,6 +265,7 @@
         </div>
     </div>
 
+    <!-- Quick Actions -->
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
@@ -296,105 +276,98 @@
                 <a href="{{ route('transactions.create') }}"
                     class="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900 rounded-lg hover:bg-green-100 dark:hover:bg-green-800 transition-colors">
                     <i class="fas fa-plus-circle text-green-600 dark:text-green-400 text-2xl mb-2"></i>
-                    <span class="text-sm font-medium text-center text-green-700 dark:text-green-300">Add
-                        Transaction</span>
+                    <span class="text-sm font-medium text-green-700 dark:text-green-300">Add Transaction</span>
                 </a>
+
                 <a href="{{ route('budgets.create') }}"
                     class="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
                     <i class="fas fa-chart-pie text-blue-600 dark:text-blue-400 text-2xl mb-2"></i>
-                    <span class="text-sm font-medium text-center text-blue-700 dark:text-blue-300">Set Budget</span>
+                    <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Set Budget</span>
                 </a>
+
                 <a href="{{ route('transactions.index') }}?type=expense"
                     class="flex flex-col items-center p-4 bg-red-50 dark:bg-red-900 rounded-lg hover:bg-red-100 dark:hover:bg-red-800 transition-colors">
                     <i class="fas fa-search text-red-600 dark:text-red-400 text-2xl mb-2"></i>
-                    <span class="text-sm font-medium text-center text-red-700 dark:text-red-300">View Expenses</span>
+                    <span class="text-sm font-medium text-red-700 dark:text-red-300">View Expenses</span>
                 </a>
+
                 <a href="{{ route('ml.index') }}"
                     class="flex flex-col items-center p-4 bg-purple-50 dark:bg-purple-900 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-800 transition-colors">
                     <i class="fas fa-brain text-purple-600 dark:text-purple-400 text-2xl mb-2"></i>
-                    <span class="text-sm font-medium text-center text-purple-700 dark:text-purple-300">AI
-                        Insights</span>
+                    <span class="text-sm font-medium text-purple-700 dark:text-purple-300">AI Insights</span>
                 </a>
             </div>
         </div>
     </div>
-
-    {{-- <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg"> ... </div> --}}
-
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Monthly Trend Chart (Kode chart Anda sudah benar, saya salin saja)
-           const trendCtx = document.getElementById('trendChart'); // Gunakan ID baru
-                if (trendCtx && typeof Chart !== 'undefined') {
-                    const trendChart = new Chart(trendCtx.getContext('2d'), {
+                console.log('Monthly Data:');
+                console.log('Labels:', {!! json_encode(collect($monthlyData)->pluck('month')) !!});
+                console.log('Income:', {!! json_encode(collect($monthlyData)->pluck('income')) !!});
+                console.log('Expense:', {!! json_encode(collect($monthlyData)->pluck('expense')) !!});
+                // Monthly Trend Chart
+                const monthlyCtx = document.getElementById('monthlyChart');
+                if (monthlyCtx) {
+                    const monthlyChart = new Chart(monthlyCtx.getContext('2d'), {
                         type: 'line',
                         data: {
-                            // Gunakan data dari Controller
-                            labels: {!! json_encode($chartLabels) !!},
+                            labels: {!! json_encode(collect($monthlyData)->pluck('month')) !!},
                             datasets: [{
                                 label: 'Income',
-                                // Gunakan data dari Controller
-                                data: {!! json_encode($chartIncomeData) !!},
-                                borderColor: '#10B981', // green-500
+                                data: {!! json_encode(collect($monthlyData)->pluck('income')) !!},
+                                borderColor: '#10B981',
                                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                borderWidth: 2, fill: true, tension: 0.4
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
                             }, {
                                 label: 'Expense',
-                                // Gunakan data dari Controller
-                                data: {!! json_encode($chartExpenseData) !!},
-                                borderColor: '#EF4444', // red-500
+                                data: {!! json_encode(collect($monthlyData)->pluck('expense')) !!},
+                                borderColor: '#EF4444',
                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                borderWidth: 2, fill: true, tension: 0.4
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
                             }]
                         },
-                        options: { // Opsi chart sama seperti sebelumnya
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { position: 'top' } },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            },
                             scales: {
                                 y: {
                                     beginAtZero: true,
                                     ticks: {
                                         callback: function(value) {
-                                            // Format Rupiah
                                             return 'Rp ' + value.toLocaleString('id-ID');
                                         }
                                     }
                                 }
                             },
-                            interaction: { intersect: false, mode: 'index' }
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            }
                         }
                     });
-                } else {
-                     console.error("Trend chart canvas not found or Chart.js not loaded.");
                 }
 
-                // Category Pie Chart (Kode chart Anda sudah benar, saya salin saja)
+                // Category Pie Chart
                 @if ($categoryBreakdown->count() > 0)
                     const categoryCtx = document.getElementById('categoryChart');
-                    // Prepare data, limiting to top 5 + others
-                    const categoryDataRaw = @json($categoryBreakdown);
-                    const topCategories = categoryDataRaw.slice(0, 5);
-                    const otherTotal = categoryDataRaw.slice(5).reduce((sum, item) => sum + parseFloat(item.total), 0);
-
-                    const categoryLabels = topCategories.map(item => item.category?.name || 'N/A');
-                    const categoryTotals = topCategories.map(item => item.total);
-                    const categoryColors = topCategories.map(item => item.category?.color || '#CCCCCC');
-
-                    if (otherTotal > 0) {
-                        categoryLabels.push('Others');
-                        categoryTotals.push(otherTotal);
-                        categoryColors.push('#9CA3AF'); // gray-400
-                    }
-
-                    if (categoryCtx && typeof Chart !== 'undefined') {
+                    if (categoryCtx) {
                         const categoryChart = new Chart(categoryCtx.getContext('2d'), {
                             type: 'doughnut',
                             data: {
-                                labels: categoryLabels,
+                                labels: {!! json_encode($categoryBreakdown->pluck('category.name')) !!},
                                 datasets: [{
-                                    data: categoryTotals,
-                                    backgroundColor: categoryColors,
+                                    data: {!! json_encode($categoryBreakdown->pluck('total')) !!},
+                                    backgroundColor: {!! json_encode($categoryBreakdown->pluck('category.color')) !!},
                                     borderWidth: 0
                                 }]
                             },
@@ -408,21 +381,14 @@
                                     tooltip: {
                                         callbacks: {
                                             label: function(context) {
-                                                let label = context.label || '';
-                                                let value = context.parsed || 0;
-                                                let total = context.chart.data.datasets[0].data.reduce((a,
-                                                    b) => a + b, 0);
-                                                let percentage = total > 0 ? ((value / total) * 100)
-                                                    .toFixed(1) : 0;
-                                                return `${label}: Rp ${value.toLocaleString('id-ID')} (${percentage}%)`;
+                                                return context.label + ': Rp ' + context.parsed
+                                                    .toLocaleString('id-ID');
                                             }
                                         }
                                     }
                                 }
                             }
                         });
-                    } else {
-                        console.error("Category chart canvas not found or Chart.js not loaded.");
                     }
                 @endif
             });

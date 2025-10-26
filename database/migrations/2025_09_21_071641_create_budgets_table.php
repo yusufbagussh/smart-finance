@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('month', 7); // Format: YYYY-MM
             $table->decimal('limit', 12, 2);
             $table->decimal('spent', 12, 2)->default(0);
+            $table->foreignId('category_id')->constrained('categories', 'id')->onDelete('cascade');
             $table->timestamps();
             $table->unique(['user_id', 'month']);
         });

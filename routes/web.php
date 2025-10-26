@@ -16,6 +16,11 @@ Route::get('/', function () {
     return redirect()->route('dashboard');
 });
 
+Route::get('/home', function () {
+    //return to view welcome
+    return view('welcome');
+});
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

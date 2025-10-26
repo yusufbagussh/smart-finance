@@ -65,7 +65,7 @@ class TransactionController extends Controller
 
         // Update budget if it's an expense
         if ($validated['type'] === 'expense') {
-            $this->updateBudget($validated['date']);
+            $this->updateBudget($validated['date'], $validated['category_id']);
         }
 
         return redirect()->route('transactions.index')
@@ -95,8 +95,8 @@ class TransactionController extends Controller
 
         // Update budgets for both old and new dates if expense
         if ($validated['type'] === 'expense') {
-            $this->updateBudget($oldDate);
-            $this->updateBudget($validated['date']);
+            $this->updateBudget($oldDate, $validated['category_id']);
+            $this->updateBudget($validated['date'], $validated['category_id']);
         }
 
         return redirect()->route('transactions.index')
@@ -113,17 +113,20 @@ class TransactionController extends Controller
 
         // Update budget if it was an expense
         if ($type === 'expense') {
-            $this->updateBudget($date);
+            $this->updateBudget($date, $transaction->category_id);
         }
 
         return redirect()->route('transactions.index')
             ->with('success', 'Transaction deleted successfully!');
     }
 
-    private function updateBudget($date)
+    private function updateBudget($date, $categoryId)
     {
         $month = Carbon::parse($date)->format('Y-m');
-        $budget = auth()->user()->budgets()->where('month', $month)->first();
+        $budget = auth()->user()->budgets()
+            ->where('category_id', $categoryId)
+            ->where('month', $month)
+            ->first();
 
         if ($budget) {
             $budget->updateSpentAmount();

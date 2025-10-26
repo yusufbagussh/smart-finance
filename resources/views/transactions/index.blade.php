@@ -56,15 +56,18 @@
 
                     <!-- Date Range -->
                     <div class="lg:col-span-1">
-                        <label class="block text-sm font-medium text-gray-700">Date Range</label>
-                        <div class="mt-1 grid grid-cols-2 gap-2">
-                            <input type="date" name="date_from" value="{{ request('date_from') }}"
-                                class="focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                placeholder="From">
-                            <input type="date" name="date_to" value="{{ request('date_to') }}"
-                                class="focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                placeholder="To">
-                        </div>
+                        <label for="date_range" class="block text-sm font-medium text-gray-700">Date
+                            Range</label>
+                        {{-- Input teks untuk Flatpickr --}}
+                        <input type="text" id="date_range" name="date_range"
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            placeholder="Select date range..."
+                            value="{{ request('date_from') && request('date_to') ? request('date_from') . ' to ' . request('date_to') : '' }}">
+                        {{-- Tampilkan range yg ada --}}
+
+                        {{-- Input hidden untuk mengirim date_from dan date_to --}}
+                        <input type="hidden" name="date_from" id="date_from" value="{{ request('date_from') }}">
+                        <input type="hidden" name="date_to" id="date_to" value="{{ request('date_to') }}">
                     </div>
                 </div>
 
@@ -95,68 +98,74 @@
         @if ($transactions->count() > 0)
             <div class="divide-y divide-gray-200">
                 @foreach ($transactions as $transaction)
-                    <div class="p-4 hover:bg-gray-50 transition-colors">
-                        <div class="flex items-center justify-between">
+                    <div class="p-4 hover:bg-gray-50 dark:hover:bg-gray-200 transition-colors">
+                        {{-- !! PERUBAHAN CONTAINER UTAMA !! --}}
+                        {{-- Dibuat flex-col di mobile, sm:flex-row di layar lebih besar --}}
+                        <div
+                            class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+
+                            {{-- Bagian Kiri: Ikon & Detail --}}
                             <div class="flex items-center min-w-0 flex-1">
-                                <!-- Category Icon -->
                                 <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-lg"
-                                    style="background-color: {{ $transaction->category->color }}20; color: {{ $transaction->category->color }}">
-                                    {{ $transaction->category->icon }}
+                                    style="background-color: {{ $transaction->category->color ?? '#CCCCCC' }}20; color: {{ $transaction->category->color ?? '#666666' }}">
+                                    {!! $transaction->category->icon ?? '<i class="fas fa-question"></i>' !!}
                                 </div>
 
-                                <!-- Transaction Details -->
                                 <div class="ml-4 min-w-0 flex-1">
-                                    <div class="flex items-center justify-between">
-                                        <div class="min-w-0 flex-1">
-                                            <p class="text-sm font-medium text-gray-900 truncate">
-                                                {{ $transaction->description }}
-                                            </p>
-                                            <div class="flex items-center mt-1 space-x-4">
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $transaction->category->name }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    {{ $transaction->date->format('M d, Y') }}
-                                                </p>
-                                                <span
-                                                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $transaction->type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                    {{ ucfirst($transaction->type) }}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <!-- Amount and Actions -->
-                                        <div class="flex items-center space-x-4">
-                                            <div class="text-right">
-                                                <p
-                                                    class="text-lg font-bold {{ $transaction->type === 'income' ? 'text-green-600' : 'text-red-600' }}">
-                                                    {{ $transaction->type === 'income' ? '+' : '-' }}Rp
-                                                    {{ number_format($transaction->amount, 0, ',', '.') }}
-                                                </p>
-                                            </div>
-
-                                            <!-- Action Buttons -->
-                                            <div class="flex items-center space-x-2">
-                                                <a href="{{ route('transactions.edit', $transaction) }}"
-                                                    class="text-blue-600 hover:text-blue-900">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <form method="POST"
-                                                    action="{{ route('transactions.destroy', $transaction) }}"
-                                                    class="inline"
-                                                    onsubmit="return confirm('Are you sure you want to delete this transaction?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </div>
+                                    {{-- Deskripsi --}}
+                                    <p class="text-sm font-medium text-gray-900 truncate">
+                                        {{ $transaction->description }}
+                                    </p>
+                                    {{-- Info Tambahan (Kategori, Tanggal, Tipe) --}}
+                                    {{-- !! PERUBAHAN DI SINI: Dibuat flex wrap !! --}}
+                                    <div
+                                        class="flex flex-wrap items-center mt-1 space-x-3 text-xs text-gray-500 dark:text-gray-400">
+                                        <span
+                                            class="whitespace-nowrap">{{ $transaction->category->name ?? 'N/A' }}</span>
+                                        <span class="whitespace-nowrap"><i
+                                                class="far fa-calendar-alt mr-1"></i>{{ $transaction->date->format('M d, Y') }}</span>
+                                        {{-- Status Badge (tetap inline-flex) --}}
+                                        <span
+                                            class="inline-flex items-center px-2 py-0.5 rounded font-medium {{ $transaction->type === 'income' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' }}">
+                                            {{ ucfirst($transaction->type) }}
+                                        </span>
                                     </div>
+                                    {{-- !! AKHIR PERUBAHAN FLEX WRAP !! --}}
                                 </div>
                             </div>
+
+                            {{-- Bagian Kanan: Amount & Actions --}}
+                            {{-- Diberi align-self-end di mobile agar ke pojok kanan bawah --}}
+                            <div class="flex items-center space-x-3 sm:space-x-4 self-end sm:self-center">
+                                <div class="text-right flex-shrink-0"> {{-- flex-shrink-0 agar amount tidak menyusut --}}
+                                    <p
+                                        class="text-base sm:text-lg font-bold {{ $transaction->type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                        {{ $transaction->type === 'income' ? '+' : '-' }}Rp
+                                        {{ number_format($transaction->amount, 0, ',', '.') }}
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center space-x-2 flex-shrink-0">
+                                    <a href="{{ route('transactions.edit', $transaction) }}"
+                                        class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                                        title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" action="{{ route('transactions.destroy', $transaction) }}"
+                                        class="inline delete-form" data-id="{{ $transaction->transaction_id }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                                            title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+
                         </div>
+                        {{-- !! AKHIR PERUBAHAN CONTAINER UTAMA !! --}}
                     </div>
                 @endforeach
             </div>
@@ -184,4 +193,60 @@
             </div>
         @endif
     </div>
+
+    {{-- !! Tambahkan Flatpickr JS & Inisialisasi Script !! --}}
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                flatpickr("#date_range", {
+                    mode: "range", // Aktifkan mode rentang
+                    dateFormat: "Y-m-d", // Format database (sesuaikan jika berbeda)
+                    altInput: true, // Tampilkan format yg mudah dibaca user
+                    altFormat: "M d, Y", // Format tampilan (misal: Oct 25, 2025)
+                    // Atur input hidden saat tanggal dipilih
+                    onChange: function(selectedDates, dateStr, instance) {
+                        if (selectedDates.length === 2) {
+                            document.getElementById('date_from').value = instance.formatDate(selectedDates[
+                                0], "Y-m-d");
+                            document.getElementById('date_to').value = instance.formatDate(selectedDates[1],
+                                "Y-m-d");
+                        } else if (selectedDates.length === 0) {
+                            // Clear hidden inputs if range is cleared
+                            document.getElementById('date_from').value = '';
+                            document.getElementById('date_to').value = '';
+                        }
+                    },
+                    // Atur nilai awal jika ada dari request
+                    defaultDate: [
+                        document.getElementById('date_from').value, // Ambil dari hidden input
+                        document.getElementById('date_to').value // Ambil dari hidden input
+                    ].filter(d => d) // Filter array jika salah satu kosong
+                });
+
+
+                const deleteForms = document.querySelectorAll('.delete-form');
+                deleteForms.forEach(form => {
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault(); // Hentikan submit form asli
+
+                        Swal.fire({
+                            title: 'Are you sure?',
+                            text: "You won't be able to revert this transaction!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6', // Biru
+                            cancelButtonColor: '#d33', // Merah
+                            confirmButtonText: 'Yes, delete it!'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Jika user konfirmasi, submit form
+                                form.submit();
+                            }
+                        })
+                    });
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>
