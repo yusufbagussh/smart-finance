@@ -13,10 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 class MachineLearningController extends Controller
 {
+    private ?string $mlBaseUrl = null;
     // public function index()
     // {
     //     $user = auth()->user();
-
     //     // Mock classification accuracy
     //     $classificationStats = [
     //         'total_transactions' => $user->transactions()->count(),
@@ -32,6 +32,11 @@ class MachineLearningController extends Controller
 
     //     return view('ml.index', compact('classificationStats', 'predictions', 'recommendations'));
     // }
+
+    public function __construct()
+    {
+        $this->mlBaseUrl = env('ML_BASE_URL', 'http://localhost:5000');
+    }
 
     public function index()
     {
@@ -60,7 +65,7 @@ class MachineLearningController extends Controller
 
         if ($dailySpending->count() > 10) { // Hanya panggil jika data cukup
             try {
-                $responsePredict = Http::timeout(15)->post('http://127.0.0.1:5000/predict', $dailySpending);
+                $responsePredict = Http::timeout(15)->post($this->mlBaseUrl . '/predict', $dailySpending);
                 if ($responsePredict->successful()) {
                     // Ambil HANYA total prediksi
                     $nextMonthPredictionSummary = $responsePredict->json('next_month_total', 'Error');
@@ -135,7 +140,7 @@ class MachineLearningController extends Controller
         // Panggil API Python
         $pythonInsights = [];
         try {
-            $responsePython = Http::timeout(15)->post('http://127.0.0.1:5000/recommend', $payload);
+            $responsePython = Http::timeout(15)->post($this->mlBaseUrl . '/recommend', $payload);
             if ($responsePython->successful()) {
                 $pythonInsights = $responsePython->json('insights', []);
                 // Ambil 1-2 insight pertama untuk preview
@@ -171,7 +176,7 @@ class MachineLearningController extends Controller
 
         try {
             // 1. Panggil API Python (Flask)
-            $response = Http::post('http://127.0.0.1:5000/classify', [
+            $response = Http::post($this->mlBaseUrl . '/classify', [
                 'description' => $description,
             ]);
 
@@ -248,7 +253,7 @@ class MachineLearningController extends Controller
         if (count($dailySpending) > 10) {
             try {
                 // 2. Panggil API Python /predict dengan data yang SUDAH DIJUMLAHKAN
-                $response = Http::post('http://127.0.0.1:5000/predict', $dailySpending); // $dailySpending, BUKAN $transactions
+                $response = Http::post($this->mlBaseUrl . '/predict', $dailySpending); // $dailySpending, BUKAN $transactions
                 // dd($response->json());
                 if ($response->successful()) {
                     $data = $response->json();
@@ -345,7 +350,7 @@ class MachineLearningController extends Controller
         // 7. Panggil API Python /recommend
         $pythonInsights = []; // Default jika Python gagal
         try {
-            $responsePython = Http::post('http://127.0.0.1:5000/recommend', $payload);
+            $responsePython = Http::post($this->mlBaseUrl . '/recommend', $payload);
             if ($responsePython->successful()) {
                 $pythonInsights = $responsePython->json('insights', []);
             } else {
