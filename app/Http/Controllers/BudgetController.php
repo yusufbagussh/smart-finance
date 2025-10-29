@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class BudgetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $currentMonth = now()->format('Y-m');
         $user = auth()->user();
@@ -17,6 +17,9 @@ class BudgetController extends Controller
         $currentMonthBudgets = $user->budgets()
             ->with('category')
             ->where('month', $currentMonth)
+            ->whereHas('category', function ($query) {
+                $query->where('type', 'expense'); // Hanya kategori expense
+            })
             ->get() // Ambil semua untuk bulan ini
             ->sortByDesc(function ($budget) { // Urutkan di sini
                 if ($budget->limit > 0) return ($budget->spent / $budget->limit) * 100;
@@ -38,21 +41,55 @@ class BudgetController extends Controller
             'isOverBudget' => $isOverTotal
         ];
 
-        // --- !! PERUBAHAN DI SINI !! ---
-        // 3. Ambil data RIWAYAT (paginasi), KECUALI bulan ini
-        $budgets = $user->budgets()
-            ->with('category')
-            ->where('month', '!=', $currentMonth) // <-- Tambahkan kondisi ini
-            ->orderBy('month', 'desc')
-            ->paginate(12); // Paginasi hanya untuk riwayat
-        // --- !! AKHIR PERUBAHAN !! ---
+        // --- !! PERUBAHAN FILTER RIWAYAT DIMULAI !! ---
 
+        // 3a. Ambil input filter untuk riwayat
+        $searchHistory = $request->input('search_history');
+        $categoryHistory = $request->input('category_history');
+        $monthHistory = $request->input('month_history'); // Format YYYY-MM
+
+        // 3b. Buat query builder untuk riwayat (tanpa paginate dulu)
+        $budgetsQuery = $user->budgets()
+            ->with('category') // Eager load kategori
+            ->where('month', '!=', $currentMonth); // Kecualikan bulan ini
+
+        // 3c. Terapkan filter jika ada
+        if ($searchHistory) {
+            // Cari berdasarkan NAMA KATEGORI karena budget tidak punya deskripsi
+            $budgetsQuery->whereHas('category', function ($q) use ($searchHistory) {
+                $q->where('name', 'ILIKE', '%' . $searchHistory . '%'); // Gunakan ILIKE untuk case-insensitive (PostgreSQL/MySQL)
+            });
+        }
+        if ($categoryHistory) {
+            $budgetsQuery->where('category_id', $categoryHistory);
+        }
+        if ($monthHistory) {
+            $budgetsQuery->where('month', $monthHistory); // Filter bulan persis
+        }
+
+        // 3d. Urutkan dan lakukan paginasi SETELAH filter
+        $budgets = $budgetsQuery->orderBy('month', 'desc') // Urutan utama tetap bulan
+            ->orderBy('category_id') // Urutan kedua (opsional)
+            ->paginate(12)
+            ->withQueryString(); // Agar pagination link menyertakan filter
+
+        // 3e. Ambil daftar kategori untuk dropdown filter
+        $categories = Category::where('type', 'expense') // Asumsi budget hanya untuk expense
+            ->orderBy('name')
+            ->get(['category_id', 'name']); // Ambil ID dan Nama
+
+        // --- !! AKHIR PERUBAHAN FILTER RIWAYAT !! ---
 
         // 4. Kirim semua data ke view
         return view('budgets.index', compact(
-            'budgets',              // Hanya berisi riwayat
-            'currentMonthBudgets',  // Berisi semua kategori bulan ini
-            'currentMonthSummary'   // Berisi total bulan ini
+            'budgets',              // Riwayat yang sudah difilter & paginasi
+            'currentMonthBudgets',
+            'currentMonthSummary',
+            'categories',           // Untuk dropdown filter
+            // Kirim nilai filter kembali ke view agar input terisi
+            'searchHistory',
+            'categoryHistory',
+            'monthHistory'
         ));
     }
 

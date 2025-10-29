@@ -94,6 +94,10 @@
                                 Registered
                             </th>
                             <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col"
                                 class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Actions
                             </th>
@@ -140,18 +144,43 @@
                                         {{ $user->created_at->diffForHumans() }}
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('admin.users.show', $user) }}"
-                                        class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3">
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                    {{-- Tambah space-x-2 --}}
+                                    <a href="{{ route('admin.users.show', $user) }}" class="..."
+                                        title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </a>
+
+                                    {{-- !! TAMBAHKAN FORM TOGGLE STATUS !! --}}
+                                    <form method="POST" action="{{ route('admin.users.toggle-status', $user) }}"
+                                        class="inline toggle-status-form" data-user-name="{{ $user->name }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        @if ($user->isActive())
+                                            <button type="submit"
+                                                class="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
+                                                title="Deactivate User">
+                                                <i class="fas fa-user-slash"></i>
+                                            </button>
+                                        @else
+                                            <button type="submit"
+                                                class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                                                title="Activate User">
+                                                <i class="fas fa-user-check"></i>
+                                            </button>
+                                        @endif
+                                    </form>
+                                    {{-- !! AKHIR FORM TOGGLE STATUS !! --}}
+
+
+                                    {{-- Form Delete (Gunakan class yg berbeda) --}}
                                     <form method="POST" action="{{ route('admin.users.destroy', $user) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Are you sure you want to delete this user? All their data will be permanently deleted.')">
+                                        class="inline delete-user-form" data-user-name="{{ $user->name }}">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
-                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                            class="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                                            title="Delete User">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
@@ -180,4 +209,62 @@
             </div>
         @endif
     </div>
+    {{-- !! TAMBAHKAN SCRIPT SWEETALERT UNTUK TOGGLE & DELETE !! --}}
+    @push('scripts')
+        {{-- Muat SweetAlert jika belum ada --}}
+        {{-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Konfirmasi Toggle Status
+                const toggleForms = document.querySelectorAll('.toggle-status-form');
+                toggleForms.forEach(form => {
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault(); // Hentikan submit
+                        const userName = form.dataset.userName;
+                        const isActivating = form.querySelector(
+                            'button i.fa-user-check'); // Cek apakah tombol activate
+                        const actionText = isActivating ? 'activate' : 'deactivate';
+                        const confirmButtonColor = isActivating ? '#3085d6' : '#d33';
+                        const confirmButtonText = isActivating ? 'Yes, activate!' : 'Yes, deactivate!';
+
+                        Swal.fire({
+                            title: `Confirm ${actionText}?`,
+                            text: `Do you want to ${actionText} the user "${userName}"? They will ${isActivating ? 'be able to' : 'not be able to'} log in.`,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: confirmButtonColor,
+                            cancelButtonColor: '#6c757d', // Abu-abu
+                            confirmButtonText: confirmButtonText
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                form.submit(); // Submit jika dikonfirmasi
+                            }
+                        });
+                    });
+                });
+
+                // Konfirmasi Delete User (beri class berbeda)
+                const deleteUserForms = document.querySelectorAll('.delete-user-form');
+                deleteUserForms.forEach(form => {
+                    form.addEventListener('submit', function(event) {
+                        event.preventDefault();
+                        const userName = form.dataset.userName;
+                        Swal.fire({
+                            title: 'Delete User?',
+                            text: `This will permanently delete "${userName}" and all their data! This action cannot be undone.`,
+                            icon: 'error', // Lebih tegas untuk delete
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#3085d6',
+                            confirmButtonText: 'Yes, DELETE user!'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                form.submit();
+                            }
+                        });
+                    });
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

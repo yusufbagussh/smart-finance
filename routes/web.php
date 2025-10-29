@@ -9,11 +9,24 @@ use App\Http\Controllers\MachineLearningController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    //return to route dashboard
-    return redirect()->route('dashboard');
+    // Cek apakah pengguna sudah login
+    if (Auth::check()) {
+        // Jika sudah login, cek perannya
+        if (auth()->user()->isAdmin()) {
+            // Jika admin, arahkan ke admin.dashboard
+            return redirect()->route('admin.dashboard');
+        } else {
+            // Jika user biasa, arahkan ke dashboard biasa
+            return redirect()->route('dashboard');
+        }
+    }
+
+    // Jika belum login (guest), arahkan ke halaman login
+    return redirect()->route('login');
 });
 
 Route::get('/home', function () {

@@ -160,7 +160,83 @@
         </div>
     @endif
 
-    @if ($budgets->count() > 0)
+    @if ($budgets->count() > 0 || $searchHistory || $categoryHistory || $monthHistory)
+        <div class="mb-6 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div x-data="{ open: {{ $searchHistory || $categoryHistory || $monthHistory ? 'true' : 'false' }} }" class="p-6"> {{-- Buka jika ada filter aktif --}}
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-filter mr-2"></i> Filter Budget History
+                    </h3>
+                    <button @click="open = !open" type="button" {{-- Tambahkan type="button" agar tidak men-submit form --}}
+                        class="inline-flex items-center px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-500 rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 disabled:opacity-25 transition ease-in-out duration-150">
+                        {{-- Tampilkan ikon dan teks berdasarkan state 'open' --}}
+                        <span x-show="!open" class="flex items-center">
+                            <i class="fas fa-filter mr-2"></i> Show Filters
+                        </span>
+                        <span x-show="open" class="flex items-center">
+                            <i class="fas fa-chevron-up mr-2"></i> Hide Filters
+                        </span>
+                    </button>
+                </div>
+
+                <form method="GET" action="{{ route('budgets.index') }}" x-show="open" x-transition
+                    class="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        {{-- Search by Category Name --}}
+                        <div>
+                            <label for="search_history"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search
+                                Category</label>
+                            <input type="text" name="search_history" id="search_history"
+                                value="{{ $searchHistory }}"
+                                class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="Enter category name...">
+                        </div>
+
+                        {{-- Filter by Category --}}
+                        <div>
+                            <label for="category_history"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                            <select name="category_history" id="category_history"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 dark:text-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">All Categories</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->category_id }}"
+                                        {{ $categoryHistory == $category->category_id ? 'selected' : '' }}>
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Filter by Month --}}
+                        <div>
+                            <label for="month_history_display" {{-- Ganti ID untuk display --}}
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Month</label>
+                            {{-- Input teks untuk Flatpickr --}}
+                            <input type="text" id="month_history_display" {{-- ID untuk Flatpickr --}}
+                                class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md focus:ring-indigo-500 focus:border-indigo-500 flatpickr-input"
+                                placeholder="Select month..." readonly> {{-- Readonly agar hanya bisa via picker --}}
+                            {{-- Input hidden untuk mengirim nilai YYYY-MM --}}
+                            <input type="hidden" name="month_history" id="month_history"
+                                value="{{ $monthHistory }}">
+                        </div>
+                    </div>
+                    <div class="flex space-x-2 mb-2 sm:mb-0">
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700">
+                            <i class="fas fa-search mr-2"></i>
+                            Filter
+                        </button>
+                        <a href="{{ route('budgets.index') }}"
+                            class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400">
+                            <i class="fas fa-times mr-2"></i>
+                            Clear
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
         <!-- Budget History -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
@@ -311,6 +387,33 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                // Inisialisasi Flatpickr untuk filter bulan
+                flatpickr("#month_history_display", { // Target input display
+                    plugins: [
+                        new monthSelectPlugin({
+                            shorthand: true, // "Jan", "Feb", etc.
+                            dateFormat: "Y-m", // Format value untuk input hidden
+                            altFormat: "F Y", // Format yang dilihat user
+                            theme: document.documentElement.classList.contains('dark') ? "dark" :
+                                "light"
+                        })
+                    ],
+                    altInput: true, // Wajib agar altFormat bekerja
+                    maxDate: "{{ now()->subMonth()->endOfMonth()->format('Y-m-d') }}", // Batasi hingga akhir bulan lalu
+                    defaultDate: "{{ $monthHistory }}", // Set nilai awal dari controller (format Y-m)
+
+                    // Saat bulan dipilih, update input hidden
+                    onChange: function(selectedDates, dateStr, instance) {
+                        const monthInputHidden = document.getElementById('month_history');
+                        if (selectedDates.length > 0) {
+                            // Format tanggal pertama yang dipilih ke YYYY-MM
+                            monthInputHidden.value = instance.formatDate(selectedDates[0], "Y-m");
+                        } else {
+                            monthInputHidden.value = ''; // Kosongkan jika pilihan dihapus
+                        }
+                    }
+                });
+
                 const deleteForms = document.querySelectorAll('.delete-form');
                 deleteForms.forEach(form => {
                     form.addEventListener('submit', function(event) {

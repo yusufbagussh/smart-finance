@@ -14,73 +14,85 @@ class CategorySeeder extends Seeder
                 'name' => 'Food & Dining',
                 'description' => 'Restaurant, groceries, and food delivery',
                 'color' => '#EF4444',
-                'icon' => '🍽️'
+                'icon' => '🍽️',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Transportation',
                 'description' => 'Gas, public transport, taxi, car maintenance',
                 'color' => '#3B82F6',
-                'icon' => '🚗'
+                'icon' => '🚗',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Shopping',
                 'description' => 'Clothing, electronics, and general purchases',
                 'color' => '#8B5CF6',
-                'icon' => '🛒'
+                'icon' => '🛒',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Entertainment',
                 'description' => 'Movies, games, subscriptions, hobbies',
                 'color' => '#F59E0B',
-                'icon' => '🎬'
+                'icon' => '🎬',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Health & Medical',
                 'description' => 'Doctor visits, medicine, hospital bills',
                 'color' => '#10B981',
-                'icon' => '🏥'
+                'icon' => '🏥',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Education',
                 'description' => 'School fees, books, courses, training',
                 'color' => '#06B6D4',
-                'icon' => '📚'
+                'icon' => '📚',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Bills & Utilities',
                 'description' => 'Electricity, water, internet, phone bills',
                 'color' => '#84CC16',
-                'icon' => '💡'
+                'icon' => '💡',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Salary',
                 'description' => 'Monthly salary and bonuses',
                 'color' => '#22C55E',
-                'icon' => '💰'
+                'icon' => '💰',
+                'type' => 'income'
             ],
             [
                 'name' => 'Business',
                 'description' => 'Business income and investments',
                 'color' => '#3B82F6',
-                'icon' => '💼'
+                'icon' => '💼',
+                'type' => 'income'
             ],
             [
                 'name' => 'Gift & Donation',
                 'description' => 'Gifts received and donations',
                 'color' => '#EC4899',
-                'icon' => '🎁'
+                'icon' => '🎁',
+                'type' => 'expense'
             ],
             [
                 'name' => 'Other Income',
                 'description' => 'Miscellaneous income sources',
                 'color' => '#6B7280',
-                'icon' => '📈'
+                'icon' => '📈',
+                'type' => 'income'
             ],
             [
                 'name' => 'Other Expense',
                 'description' => 'Miscellaneous expenses',
                 'color' => '#EF4444',
-                'icon' => '📉'
+                'icon' => '📉',
+                'type' => 'expense'
             ],
         ];
 

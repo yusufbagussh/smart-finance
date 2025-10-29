@@ -26,9 +26,21 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        // !! TAMBAHKAN PENGECEKAN INI !!
+        $user = $request->user();
+        if ($user->isDeactivated()) { // Gunakan helper method
+            Auth::logout(); // Logout paksa user yang baru saja diautentikasi
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            // Redirect kembali ke login dengan pesan error
+            return back()->withErrors([
+                'email' => 'Your account has been deactivated.',
+            ])->onlyInput('email');
+        }
+        // !! AKHIR PENGECEKAN !!
         $request->session()->regenerate();
-
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('dashboard'));
+        // return redirect()->intended(route('dashboard', absolute: false));
     }
 
     /**
