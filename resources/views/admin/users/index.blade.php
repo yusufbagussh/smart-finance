@@ -144,6 +144,20 @@
                                         {{ $user->created_at->diffForHumans() }}
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if ($user->isActive())
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                            Active
+                                        </span>
+                                    @else
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                            Inactive
+                                        </span>
+                                        <span class="block text-xs text-gray-500 dark:text-gray-400">
+                                            since {{ $user->deactivated_at->format('M d, Y') }}
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                     {{-- Tambah space-x-2 --}}
                                     <a href="{{ route('admin.users.show', $user) }}" class="..."
