@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Http;
 
 class MachineLearningMonitoringController extends Controller
 {
+    private ?string $mlBaseUrl = null;
+
+    public function __construct()
+    {
+        $this->mlBaseUrl = env('ML_BASE_URL', 'http://localhost:5000');
+    }
+
     public function index()
     {
         // ... (Kode status API, DB, Disk, User Stats) ...
@@ -22,14 +29,22 @@ class MachineLearningMonitoringController extends Controller
         $apiResponseTime = null;
         try {
             $start = microtime(true);
-            $response = Http::timeout(2)->get('http://127.0.0.1:5000/health');
+            $response = Http::timeout(2)->get($this->mlBaseUrl . 'health');
             $apiResponseTime = round((microtime(true) - $start) * 1000);
-            if ($response->successful()) { $apiStatus = 'ONLINE'; }
-        } catch (\Exception $e) { $apiStatus = 'OFFLINE'; }
+            if ($response->successful()) {
+                $apiStatus = 'ONLINE';
+            }
+        } catch (\Exception $e) {
+            $apiStatus = 'OFFLINE';
+        }
 
         // 2. Cek Status Database
         $dbStatus = 'TERHUBUNG';
-        try { DB::connection()->getPdo(); } catch (\Exception $e) { $dbStatus = 'GAGAL'; }
+        try {
+            DB::connection()->getPdo();
+        } catch (\Exception $e) {
+            $dbStatus = 'GAGAL';
+        }
 
         // 3. Statistik Server (Disk Space)
         $diskTotal = disk_total_space('/');
@@ -72,12 +87,25 @@ class MachineLearningMonitoringController extends Controller
 
 
         return view('admin.monitoring.index', compact(
-            'apiStatus', 'apiResponseTime', 'dbStatus', 'diskUsedPercent',
-            'userCount', 'transactionCount', 'budgetCount', 'failedJobs',
+            'apiStatus',
+            'apiResponseTime',
+            'dbStatus',
+            'diskUsedPercent',
+            'userCount',
+            'transactionCount',
+            'budgetCount',
+            'failedJobs',
             // Kirim data baru ke view
-            'classifyErrors', 'classifyAvgLatency', 'classifyAvgConfidenceCat', 'classifyAvgConfidenceType',
-            'predictErrors', 'predictAvgLatency',
-            'recommendPythonErrors', 'recommendPythonAvgLatency', 'recommendGeminiErrors', 'recommendGeminiAvgLatency'
+            'classifyErrors',
+            'classifyAvgLatency',
+            'classifyAvgConfidenceCat',
+            'classifyAvgConfidenceType',
+            'predictErrors',
+            'predictAvgLatency',
+            'recommendPythonErrors',
+            'recommendPythonAvgLatency',
+            'recommendGeminiErrors',
+            'recommendGeminiAvgLatency'
         ));
     }
 }
