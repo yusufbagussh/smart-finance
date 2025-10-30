@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\MachineLearningMonitoringController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\MachineLearningController;
 use App\Http\Controllers\ProfileController;
@@ -78,6 +79,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Category Management
     Route::resource('categories', CategoryController::class);
+
+    Route::get('/monitoring', [MachineLearningMonitoringController::class, 'index'])->name('monitoring.index');
 });
 
 Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function () {

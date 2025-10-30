@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Gemini\Laravel\Facades\Gemini;
 use Illuminate\Database\Eloquent\Casts\Json;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -174,11 +175,14 @@ class MachineLearningController extends Controller
             return response()->json(['error' => 'Description cannot be empty'], 400);
         }
 
+        $startTime = microtime(true); // Catat waktu mulai
         try {
             // 1. Panggil API Python (Flask)
             $response = Http::post($this->mlBaseUrl . '/classify', [
                 'description' => $description,
             ]);
+
+            $duration = round((microtime(true) - $startTime) * 1000); // Hitung durasi (ms)
 
             // 2. Periksa apakah panggilan API sukses
             if ($response->successful()) {
@@ -187,6 +191,11 @@ class MachineLearningController extends Controller
                 // 3. Dapatkan nama kategori & tipe dari hasil ML
                 $suggestedCategoryName = $mlResult['predicted_category'] ?? 'Other Expense';
                 $predictedType = $mlResult['predicted_type'] ?? 'expense'; // Default ke expense jika gagal
+
+                // Simpan metrik ke cache
+                $this->storeMetric('classify_latency', $duration);
+                $this->storeMetric('classify_confidence_cat', $mlResult['confidence_category'] ?? 0);
+                $this->storeMetric('classify_confidence_type', $mlResult['confidence_type'] ?? 0);
 
                 // 4. Cari Category ID di database Laravel berdasarkan nama
                 $category = Category::where('name', $suggestedCategoryName)->first();
@@ -202,7 +211,7 @@ class MachineLearningController extends Controller
                 ]);
             } else {
                 Log::error('ML API Classification Failed: ' . $response->body());
-                // Jika API error, kirim response error tapi jangan crash
+                Cache::increment('ml_classify_errors'); // Hitung error                // Jika API error, kirim response error tapi jangan crash
                 return response()->json([
                     'error' => 'Classification service error.',
                     'suggested_category_id' => null,
@@ -210,7 +219,8 @@ class MachineLearningController extends Controller
                 ], 500); // Kirim status 500
             }
         } catch (\Exception $e) {
-            Log::error('ML API Connection Failed: ' . $e->getMessage());
+            Log::error('ML API Connection Failed: ' + $e->getMessage());
+            Cache::increment('ml_classify_errors'); // Hitung error
             return response()->json([
                 'error' => 'Could not connect to classification service.',
                 'suggested_category_id' => null,
@@ -251,28 +261,28 @@ class MachineLearningController extends Controller
         $nextMonthPrediction = "Rp 0";
         // Hanya panggil API jika user punya data (misal: lebih dari 10 hari transaksi)
         if (count($dailySpending) > 10) {
+            $startTime = microtime(true); // Catat waktu mulai
             try {
                 // 2. Panggil API Python /predict dengan data yang SUDAH DIJUMLAHKAN
                 $response = Http::post($this->mlBaseUrl . '/predict', $dailySpending); // $dailySpending, BUKAN $transactions
+                $duration = round((microtime(true) - $startTime) * 1000); // Hitung durasi (ms)
+                $this->storeMetric('predict_latency', $duration);
                 // dd($response->json());
                 if ($response->successful()) {
                     $data = $response->json();
                     $forecastData = $data['forecast_data'] ?? [];
                     $nextMonthPrediction = $data['next_month_total'] ?? "Error";
                 } else {
+                    Cache::increment('ml_predict_errors'); // Hitung error
                     $nextMonthPrediction = "Error: Service not responding";
                 }
             } catch (\Exception $e) {
+                Cache::increment('ml_predict_errors'); // Hitung error
                 $nextMonthPrediction = "Error: " . $e->getMessage();
             }
         } else {
             $nextMonthPrediction = "Butuh lebih banyak data transaksi untuk prediksi.";
         }
-
-        // dd([
-        //     'forecastData' => $forecastData,
-        //     'nextMonthPrediction' => $nextMonthPrediction
-        // ]);
 
         // 3. Kirim data ke view
         return view('ml.predictions', [
@@ -349,15 +359,20 @@ class MachineLearningController extends Controller
 
         // 7. Panggil API Python /recommend
         $pythonInsights = []; // Default jika Python gagal
+        $pythonStartTime = microtime(true);
         try {
             $responsePython = Http::post($this->mlBaseUrl . '/recommend', $payload);
+            $this->storeMetric('recommend_python_latency', round((microtime(true) - $pythonStartTime) * 1000)); // Simpan durasi
             if ($responsePython->successful()) {
                 $pythonInsights = $responsePython->json('insights', []);
+                $this->storeMetric('recommend_python_latency', round((microtime(true) - $pythonStartTime) * 1000)); // Simpan durasi
             } else {
                 Log::error('Python API /recommend failed: ' . $responsePython->status() . ' - ' . $responsePython->body());
+                Cache::increment('ml_recommend_python_errors'); // Hitung error
             }
         } catch (\Exception $e) {
             Log::error('Python API /recommend connection failed: ' . $e->getMessage());
+            Cache::increment('ml_recommend_python_errors');
         }
 
         // // 8. Kirim data ke view
@@ -368,7 +383,7 @@ class MachineLearningController extends Controller
         // --- !! LANGKAH BARU: PANGGIL GEMINI API !! ---
         // --- Langkah 8: Panggil Gemini API (dengan Prompt yang Diperkaya) ---
         $geminiRecommendationText = "Maaf, ringkasan AI tidak dapat dimuat saat ini."; // Default
-
+        $geminiStartTime = microtime(true);
         $apiKey = env('GEMINI_API_KEY'); // Ambil dari config atau .env
         if ($apiKey) { // Hanya panggil jika API key ada
             // $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $apiKey;
@@ -403,19 +418,25 @@ class MachineLearningController extends Controller
 
             try {
                 $responseGemini = Gemini::generativeModel(model: 'gemini-2.5-pro')->generateContent($prompt); // Sesuaikan model jika perlu (geminiPro(), etc.)                dd($responseGemini->json());
+                $this->storeMetric('recommend_gemini_latency', round((microtime(true) - $geminiStartTime) * 1000)); // Simpan durasi
                 if ($responseGemini->text()) {
                     $geminiRecommendationText = $responseGemini->text();
                     // Ekstrak teks dari respons Gemini
                     // $geminiRecommendationText = $responseGemini->json('candidates.0.content.parts.0.text', $geminiRecommendationText);
                 } else {
                     Log::error('Gemini API call failed: ' . json_encode($responseGemini));
+                    Cache::increment('ml_recommend_gemini_errors');
                     // Jika Gemini gagal, gunakan pesan default atau mungkin hanya insight Python
                     // Untuk sekarang, kita biarkan pakai default message.
                 }
             } catch (\Exception $e) {
                 Log::error('Gemini API connection failed: ' . $e->getMessage());
+                Cache::increment('ml_recommend_gemini_errors');
                 // Jika koneksi gagal, gunakan pesan default
             }
+        } else {
+            Log::warning('GEMINI_API_KEY not set. Skipping Gemini call.');
+            $geminiRecommendationText = "Ringkasan AI dinonaktifkan. Silakan periksa wawasan detail di bawah.";
         }
         // --- !! AKHIR LANGKAH GEMINI !! ---
         // 8. Kirim Teks Final dari Gemini ke View
@@ -537,5 +558,25 @@ class MachineLearningController extends Controller
         ];
 
         return $tips[$categoryName] ?? ['Review your spending in this category', 'Set a monthly budget limit', 'Track expenses regularly'];
+    }
+
+    /**
+     * Helper function to store metrics in cache.
+     * Menyimpan 100 data terakhir untuk dihitung rata-ratanya.
+     */
+    private function storeMetric(string $key, $value)
+    {
+        // Simpan selama 24 jam (1440 menit)
+        $expiry = 1440 * 60;
+
+        $data = Cache::get($key, []);
+        $data[] = $value;
+
+        // Hanya simpan 100 data terakhir
+        if (count($data) > 100) {
+            $data = array_slice($data, -100);
+        }
+
+        Cache::put($key, $data, $expiry);
     }
 }

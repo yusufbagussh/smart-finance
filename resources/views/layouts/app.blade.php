@@ -151,12 +151,16 @@
                         </a>
 
                         {{-- 5. User View --}}
-                        <a href="{{ route('dashboard') }}"
+                        {{-- <a href="{{ route('dashboard') }}"
                             class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('dashboard') ? 'text-white dark:text-white font-semibold' : 'hover:text-white' }}">
                             <i class="fas fa-eye text-xl mb-1"></i>
                             <span class="text-xs leading-none">User View</span>
+                        </a> --}}
+                        <a href="{{ route('admin.monitoring.index') }}"
+                            class="flex flex-col items-center justify-center w-1/5 p-2 {{ request()->routeIs('admin.monitoring.*') ? 'text-white dark:text-white font-semibold' : 'text-purple-200 dark:text-purple-300 hover:text-white' }}">
+                            <i class="fas fa-heartbeat text-xl mb-1"></i>
+                            <span class="text-xs leading-none">Monitoring</span>
                         </a>
-
                     </div>
                 </div>
             </div>

@@ -172,6 +172,10 @@
                                 <i class="fas fa-users mr-2"></i>
                                 {{ __('Users') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
+                                <i class="fas fa-heartbeat mr-2"></i>
+                                {{ __('Monitoring') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('dashboard')" :active="false">
                                 <i class="fas fa-eye mr-2"></i>
                                 {{ __('User View') }}
@@ -260,15 +264,18 @@
                                 <i class="fas fa-crown mr-1"></i>
                                 Administrator
                             </div>
-                            {{-- <x-dropdown-link :href="route('admin.dashboard')"> --}}
-                            <x-dropdown-link :href="route('admin.dashboard')">
-                                <i class="fas fa-tachometer-alt mr-2"></i>
-                                {{ __('Admin Dashboard') }}
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('dashboard')">
-                                <i class="fas fa-eye mr-2"></i>
-                                {{ __('Switch to User View') }}
-                            </x-dropdown-link>
+                            @if (request()->routeIs('admin.*'))
+                                <x-dropdown-link :href="route('dashboard')">
+                                    <i class="fas fa-eye mr-2"></i>
+                                    {{ __('Switch to User View') }}
+                                </x-dropdown-link>
+                            @else
+                                {{-- <x-dropdown-link :href="route('admin.dashboard')"> --}}
+                                <x-dropdown-link :href="route('admin.dashboard')">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>
+                                    {{ __('Switch to Admin View') }}
+                                </x-dropdown-link>
+                            @endif
                             <div class="border-t border-gray-200 dark:border-gray-600"></div>
                         @endif
 
@@ -312,22 +319,54 @@
         <div class="pt-2 pb-3 space-y-1">
             @if (auth()->user()->isAdmin())
                 {{-- Admin Mobile Navigation --}}
-                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                    <i class="fas fa-tachometer-alt mr-2"></i>
-                    {{ __('Admin Dashboard') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                    <i class="fas fa-users mr-2"></i>
-                    {{ __('Users') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
-                    <i class="fas fa-tags mr-2"></i>
-                    {{ __('Categories') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('dashboard')" :active="false">
-                    <i class="fas fa-eye mr-2"></i>
-                    {{ __('User View') }}
-                </x-responsive-nav-link>
+                @if (request()->routeIs('admin.*'))
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        {{ __('Admin Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                        <i class="fas fa-users mr-2"></i>
+                        {{ __('Users') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                        <i class="fas fa-tags mr-2"></i>
+                        {{ __('Categories') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
+                        <i class="fas fa-tags mr-2"></i>
+                        {{ __('Monitoring') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('dashboard')" :active="false">
+                        <i class="fas fa-eye mr-2"></i>
+                        {{ __('User View') }}
+                    </x-responsive-nav-link>
+                @else
+                    {{-- User Mobile Navigation --}}
+                    <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <i class="fas fa-home mr-2"></i>
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
+                        <i class="fas fa-exchange-alt mr-2"></i>
+                        {{ __('Transactions') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        {{ __('Budget') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
+                        <i class="fas fa-brain mr-2"></i>
+                        {{ __('AI Features') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                        <i class="fas fa-file-download mr-2"></i>
+                        {{ __('Reports') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <i class="fas fa-eye mr-2"></i>
+                        {{ __('Admin View') }}
+                    </x-responsive-nav-link>
+                @endif
             @else
                 {{-- User Mobile Navigation --}}
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -345,6 +384,10 @@
                 <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                     <i class="fas fa-brain mr-2"></i>
                     {{ __('AI Features') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                    <i class="fas fa-file-download mr-2"></i>
+                    {{ __('Reports') }}
                 </x-responsive-nav-link>
             @endif
         </div>
