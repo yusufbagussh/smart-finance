@@ -11,47 +11,42 @@
 
             {{-- Grid untuk Status (yang sudah ada) --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                {{-- Card Status API AI --}}
+                
                 <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">ML API Status</h3>
                     @if ($apiStatus === 'ONLINE')
-                        <span class ...>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                             <i class="fas fa-check-circle mr-2"></i> ONLINE
                         </span>
-                        <p class.="text-sm text-gray-500 dark:text-gray-400 mt-2">Response Time: {{ $apiResponseTime }}
-                            ms</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Response Time: {{ $apiResponseTime }} ms</p>
                     @else
-                        <span class ...>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                             <i class="fas fa-exclamation-triangle mr-2"></i> OFFLINE
                         </span>
                     @endif
                 </div>
 
-                {{-- Card Status Database --}}
                 <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Database Status</h3>
-                    @if ($dbStatus === 'TERHUBUNG')
-                        <span class ...>
+                     @if ($dbStatus === 'TERHUBUNG')
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                             <i class="fas fa-check-circle mr-2"></i> TERHUBUNG
                         </span>
                     @else
-                        <span class ...>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                             <i class="fas fa-exclamation-triangle mr-2"></i> GAGAL
                         </span>
                     @endif
                 </div>
 
-                {{-- Card Status Disk --}}
                 <div class="bg-white dark:bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    {{-- ... (Kode disk usage Anda) ... --}}
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Server Disk Usage</h3>
                     <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
-                        <div class="h-4 rounded-full {{ $diskUsedPercent > 90 ? 'bg-red-500' : ($diskUsedPercent > 75 ? 'bg-yellow-500' : 'bg-blue-500') }}"
-                            style="width: {{ $diskUsedPercent }}%">
+                        <div class="h-4 rounded-full {{ $diskUsedPercent > 90 ? 'bg-red-500' : ($diskUsedPercent > 75 ? 'bg-yellow-500' : 'bg-blue-500') }}" 
+                             style="width: {{ $diskUsedPercent }}%">
                         </div>
                     </div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">
-                        {{ number_format($diskUsedPercent, 2) }}% Used</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 mt-2 text-center">{{ number_format($diskUsedPercent, 2) }}% Used</p>
                 </div>
             </div>
 
