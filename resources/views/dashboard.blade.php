@@ -10,7 +10,6 @@
             </div>
         </div>
     </x-slot>
-
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
@@ -86,24 +85,70 @@
         <div class="lg:col-span-2 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 {{-- Filter Buttons --}}
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                        <i class="fas fa-chart-line mr-2"></i>
-                        {{-- Judul dinamis dari controller --}}
-                        {{ $chartTitle }}
-                    </h3>
-                    {{-- Tombol Filter --}}
-                    <div class="flex space-x-2">
-                        <a href="{{ route('dashboard', ['filter' => 'daily']) }}"
-                            class="px-3 py-1 rounded-md text-xs font-medium transition-colors {{ $filter === 'daily' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-                            7 Days
-                        </a>
-                        <a href="{{ route('dashboard', ['filter' => 'monthly']) }}"
-                            class="px-3 py-1 rounded-md text-xs font-medium transition-colors {{ $filter === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600' }}">
-                            6 Months
-                        </a>
+                {{-- Form untuk Filter --}}
+                <form method="GET" action="{{ route('dashboard') }}" id="chart-filter-form" class="mb-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                        {{-- Judul Grafik --}}
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 whitespace-nowrap mr-4">
+                            <i class="fas fa-chart-line mr-2"></i>
+                            {{ $chartTitle }}
+                        </h3>
+
+                        {{-- Kontainer Filter --}}
+                        <div class="flex flex-wrap items-center justify-end gap-2"> {{-- Gap untuk jarak --}}
+                            {{-- Tombol Filter Daily/Monthly --}}
+                            <div class="flex rounded-md shadow-sm">
+                                {{-- Hidden input agar filter tetap terkirim saat submit date range --}}
+                                <input type="hidden" name="filter" value="{{ $filter }}">
+
+                                {{-- <a href="{{ route('dashboard', ['filter' => 'daily'] + request()->except('filter')) }}"
+                                    class="px-3 py-1 rounded-l-md text-xs font-medium transition-colors border border-gray-300 dark:border-gray-600 {{ $filter === 'daily' ? 'bg-blue-600 text-white border-blue-600 z-10' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                    Daily
+                                </a> --}}
+                                <a href="{{ route('dashboard', ['filter' => 'daily']) }}"
+                                    class="px-3 py-1 rounded-l-md text-xs font-medium transition-colors border border-gray-300 dark:border-gray-600 {{ $filter === 'daily' ? 'bg-blue-600 text-white border-blue-600 z-10' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                    Daily
+                                </a>
+                                {{-- <a href="{{ route('dashboard', ['filter' => 'monthly'] + request()->except('filter')) }}"
+                                    class="px-3 py-1 rounded-r-md text-xs font-medium transition-colors border border-l-0 border-gray-300 dark:border-gray-600 {{ $filter === 'monthly' ? 'bg-blue-600 text-white border-blue-600 z-10' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                    Monthly
+                                </a> --}}
+                                <a href="{{ route('dashboard', ['filter' => 'monthly']) }}"
+                                    class="px-3 py-1 rounded-r-md text-xs font-medium transition-colors border border-l-0 border-gray-300 dark:border-gray-600 {{ $filter === 'monthly' ? 'bg-blue-600 text-white border-blue-600 z-10' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600' }}">
+                                    Monthly
+                                </a>
+                            </div>
+
+                            {{-- Input Flatpickr Date Range --}}
+                            <div class="relative">
+                                <input type="text" id="chart_date_range" name="chart_date_range"
+                                    {{-- Nama berbeda agar tidak konflik --}}
+                                    class="text-xs focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:w-56 shadow-sm border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 rounded-md py-1 px-3"
+                                    placeholder="{{ $filter === 'daily' ? 'Select date range (max 30d)' : 'Select month range (max 12m)' }}"
+                                    value="{{ $dateFrom && $dateTo ? $dateFrom . ' to ' . $dateTo : '' }}">
+                                {{-- Input hidden --}}
+                                <input type="hidden" name="date_from" id="chart_date_from"
+                                    value="{{ $dateFrom }}">
+                                <input type="hidden" name="date_to" id="chart_date_to" value="{{ $dateTo }}">
+                            </div>
+
+                            {{-- Tombol Submit Filter --}}
+                            <button type="submit" title="Apply Date Filter"
+                                class="px-3 py-1 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                <i class="fas fa-filter"></i>
+                                {{-- <span class="ml-1 hidden sm:inline">Apply</span> --}}
+                            </button>
+                            {{-- Tombol Reset (opsional) --}}
+                            @if ($dateFrom || $dateTo)
+                                <a href="{{ route('dashboard', ['filter' => $filter]) }}" title="Reset Date Filter"
+                                    class="px-3 py-1 bg-gray-300 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
+                </form>
+                {{-- Akhir Form Filter --}}
                 {{-- Chart Canvas --}}
                 <div class="relative h-64">
                     <canvas id="trendChart"></canvas> {{-- Ganti ID agar lebih generik --}}
@@ -324,8 +369,151 @@
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                const dateRangeInput = document.getElementById('chart_date_range');
+                const dateFromInput = document.getElementById('chart_date_from');
+                const dateToInput = document.getElementById('chart_date_to');
+                const currentFilter = '{{ $filter }}'; // 'daily' or 'monthly'
+
+                let flatpickrInstance = flatpickr(dateRangeInput, {
+                    mode: "range",
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: currentFilter === 'daily' ? "M d, Y" : "M Y",
+                    maxDate: "today", // Tetap batasi hingga hari ini
+                    plugins: currentFilter === 'monthly' ? [
+                        new monthSelectPlugin({
+                            shorthand: true,
+                            dateFormat: "Y-m",
+                            altFormat: "M Y",
+                            theme: document.documentElement.classList.contains('dark') ? "dark" :
+                                "light"
+                        })
+                    ] : [],
+
+                    // !! VALIDASI RANGE DIMULAI DI SINI !!
+                    onReady: function(selectedDates, dateStr, instance) {
+                        // Set nilai awal dari input hidden
+                        const initialDates = [dateFromInput.value, dateToInput.value].filter(d => d);
+                        if (initialDates.length === 2) {
+                            instance.setDate(initialDates, false); // Set tanggal tanpa memicu onChange
+                        }
+                    },
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // Reset maxDate setiap kali pilihan berubah
+                        instance.set('maxDate', "today");
+
+                        // Jika baru memilih tanggal/bulan PERTAMA
+                        if (selectedDates.length === 1) {
+                            const startDate = selectedDates[0];
+                            let maxEndDate = null;
+
+                            if (currentFilter === 'daily') {
+                                // Hitung tanggal maksimal: startDate + 29 hari
+                                maxEndDate = new Date(startDate.getTime());
+                                maxEndDate.setDate(startDate.getDate() + 29); // Max 30 hari range
+                            } else { // monthly
+                                // Hitung bulan maksimal: startDate + 11 bulan
+                                maxEndDate = new Date(startDate.getFullYear(), startDate.getMonth() + 11,
+                                    startDate.getDate()); // Max 12 bulan range
+                            }
+
+                            // Batasi juga agar tidak melebihi hari ini
+                            const today = new Date();
+                            if (maxEndDate > today) {
+                                maxEndDate = today;
+                            }
+
+                            // Set maxDate dinamis untuk pilihan tanggal KEDUA
+                            instance.set('maxDate', maxEndDate);
+                            // Kosongkan input hidden saat baru memilih tanggal pertama
+                            dateFromInput.value = '';
+                            dateToInput.value = '';
+
+                        }
+                        // Jika sudah memilih tanggal/bulan KEDUA (range lengkap)
+                        else if (selectedDates.length === 2) {
+                            const startDate = selectedDates[0];
+                            const endDate = selectedDates[1];
+
+                            // Validasi ulang (sebagai fallback, jika maxDate gagal)
+                            let isValid = true;
+                            if (currentFilter === 'daily') {
+                                let diffDays = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 *
+                                    24);
+                                if (diffDays > 29) isValid = false;
+                            } else { // monthly
+                                let diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+                                    endDate.getMonth() - startDate.getMonth();
+                                if (diffMonths > 11) isValid = false;
+                            }
+
+                            if (isValid) {
+                                // Isi input hidden JIKA valid
+                                if (currentFilter === 'monthly') {
+                                    dateFromInput.value = instance.formatDate(new Date(startDate
+                                        .getFullYear(), startDate.getMonth(), 1), "Y-m-d");
+                                    dateToInput.value = instance.formatDate(new Date(endDate.getFullYear(),
+                                        endDate.getMonth(), 1), "Y-m-d");
+                                } else {
+                                    dateFromInput.value = instance.formatDate(startDate, "Y-m-d");
+                                    dateToInput.value = instance.formatDate(endDate, "Y-m-d");
+                                }
+                            } else {
+                                // Jika tidak valid (misal user mengetik manual range terlalu lebar)
+                                // Beri tahu user dan reset pilihan
+                                Swal.fire({ // Gunakan SweetAlert jika ada
+                                    icon: 'warning',
+                                    title: 'Invalid Range',
+                                    text: `Maximum range allowed is ${currentFilter === 'daily' ? '30 days' : '12 months'}. Please select again.`,
+                                });
+                                instance.clear(); // Hapus pilihan
+                                dateFromInput.value = '';
+                                dateToInput.value = '';
+                                return; // Hentikan proses lebih lanjut
+                            }
+                        }
+                        // Jika pilihan dihapus (selectedDates kosong)
+                        else {
+                            dateFromInput.value = '';
+                            dateToInput.value = '';
+                        }
+                    },
+                    // onClose tidak perlu diubah, tapi pastikan tidak konflik
+                    onClose: function(selectedDates, dateStr, instance) {
+                        // Jika hanya 1 tanggal dipilih (mode daily), set end = start
+                        if (selectedDates.length === 1 && currentFilter === 'daily') {
+                            const theDate = selectedDates[0];
+                            dateFromInput.value = instance.formatDate(theDate, "Y-m-d");
+                            dateToInput.value = instance.formatDate(theDate, "Y-m-d");
+                            instance.setDate([theDate, theDate], true);
+                        }
+                        // Reset maxDate setelah kalender ditutup
+                        instance.set('maxDate', "today");
+                    },
+                    // defaultDate: [dateFromInput.value, dateToInput.value].filter(d => d)
+                });
+
+                // Fungsi validasi sederhana (opsional)
+                function validateDateRange(selectedDates) {
+                    if (selectedDates.length !== 2) return;
+                    let start = selectedDates[0];
+                    let end = selectedDates[1];
+                    let diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+                    let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth();
+
+                    if (currentFilter === 'daily' && diffDays > 29) {
+                        Swal.fire('Info', 'Maximum date range for daily view is 30 days.', 'info');
+                        // Reset? Atau biarkan controller yg membatasi
+                    } else if (currentFilter === 'monthly' && diffMonths > 11) {
+                        Swal.fire('Info', 'Maximum range for monthly view is 12 months.', 'info');
+                        // Reset?
+                    }
+                }
+
+                // !! AKHIR INISIALISASI FLATPICKR !!
+
                 // Monthly Trend Chart (Kode chart Anda sudah benar, saya salin saja)
-           const trendCtx = document.getElementById('trendChart'); // Gunakan ID baru
+                const trendCtx = document.getElementById('trendChart'); // Gunakan ID baru
                 if (trendCtx && typeof Chart !== 'undefined') {
                     const trendChart = new Chart(trendCtx.getContext('2d'), {
                         type: 'line',
@@ -338,19 +526,28 @@
                                 data: {!! json_encode($chartIncomeData) !!},
                                 borderColor: '#10B981', // green-500
                                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                borderWidth: 2, fill: true, tension: 0.4
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
                             }, {
                                 label: 'Expense',
                                 // Gunakan data dari Controller
                                 data: {!! json_encode($chartExpenseData) !!},
                                 borderColor: '#EF4444', // red-500
                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                                borderWidth: 2, fill: true, tension: 0.4
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.4
                             }]
                         },
                         options: { // Opsi chart sama seperti sebelumnya
-                            responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { position: 'top' } },
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                }
+                            },
                             scales: {
                                 y: {
                                     beginAtZero: true,
@@ -362,11 +559,14 @@
                                     }
                                 }
                             },
-                            interaction: { intersect: false, mode: 'index' }
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            }
                         }
                     });
                 } else {
-                     console.error("Trend chart canvas not found or Chart.js not loaded.");
+                    console.error("Trend chart canvas not found or Chart.js not loaded.");
                 }
 
                 // Category Pie Chart (Kode chart Anda sudah benar, saya salin saja)
@@ -375,7 +575,8 @@
                     // Prepare data, limiting to top 5 + others
                     const categoryDataRaw = @json($categoryBreakdown);
                     const topCategories = categoryDataRaw.slice(0, 5);
-                    const otherTotal = categoryDataRaw.slice(5).reduce((sum, item) => sum + parseFloat(item.total), 0);
+                    const otherTotal = categoryDataRaw.slice(5).reduce((sum, item) => sum + parseFloat(item
+                        .total), 0);
 
                     const categoryLabels = topCategories.map(item => item.category?.name || 'N/A');
                     const categoryTotals = topCategories.map(item => item.total);
@@ -410,9 +611,11 @@
                                             label: function(context) {
                                                 let label = context.label || '';
                                                 let value = context.parsed || 0;
-                                                let total = context.chart.data.datasets[0].data.reduce((a,
-                                                    b) => a + b, 0);
-                                                let percentage = total > 0 ? ((value / total) * 100)
+                                                let total = context.chart.data.datasets[0].data
+                                                    .reduce((a,
+                                                        b) => a + b, 0);
+                                                let percentage = total > 0 ? ((value / total) *
+                                                        100)
                                                     .toFixed(1) : 0;
                                                 return `${label}: Rp ${value.toLocaleString('id-ID')} (${percentage}%)`;
                                             }

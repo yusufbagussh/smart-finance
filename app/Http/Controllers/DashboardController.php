@@ -112,10 +112,11 @@ class DashboardController extends Controller
         $user = auth()->user();
         $currentMonth = now()->format('Y-m');
 
-        // --- !! FILTER LOGIC START !! ---
-        // Ambil filter dari request, default 'daily'
-        $filter = $request->input('filter', 'daily');
-        // --- !! FILTER LOGIC END !! ---
+        // --- FILTER & DATE RANGE LOGIC START ---
+        $filter = $request->input('filter', 'daily'); // daily or monthly
+        // Ambil date_from dan date_to dari request
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
 
 
         // ... (Kode untuk $totalIncome, $totalExpense, $currentBalance, $monthlyIncome, $monthlyExpense) ...
@@ -130,59 +131,95 @@ class DashboardController extends Controller
         $recentTransactions = $user->transactions()->with('category')->orderBy('date', 'desc')->orderBy('created_at', 'desc')->limit(5)->get();
 
 
-        // --- !! CHART DATA LOGIC CHANGES START !! ---
-        $chartData = [];
+        // --- CHART DATA LOGIC (DIPERBARUI TOTAL) ---
         $chartLabels = [];
         $chartIncomeData = [];
         $chartExpenseData = [];
-        $chartTitle = ''; // Judul grafik dinamis
+        $chartTitle = '';
+        $startDate = null; // Untuk menyimpan tanggal mulai iterasi
+        $endDate = null;   // Untuk menyimpan tanggal akhir iterasi
 
+        // Tentukan Tanggal Mulai dan Akhir berdasarkan Filter dan Input
         if ($filter === 'daily') {
-            $chartTitle = 'Daily Trend (Last 7 Days)';
-            // Ambil data 7 hari terakhir
-            for ($i = 6; $i >= 0; $i--) {
-                $date = now()->subDays($i);
+            if ($dateFrom && $dateTo) {
+                try {
+                    $startDate = Carbon::parse($dateFrom)->startOfDay();
+                    $endDate = Carbon::parse($dateTo)->startOfDay();
+                    // Batasi maksimal 30 hari
+                    if ($startDate->diffInDays($endDate) > 29) { // diffInDays(30) itu 31 hari
+                        $startDate = $endDate->copy()->subDays(29);
+                        $chartTitle = 'Daily Trend (Last 30 Days)';
+                    } else {
+                        $chartTitle = 'Daily Trend (' . $startDate->format('M d') . ' - ' . $endDate->format('M d') . ')';
+                    }
+                } catch (\Exception $e) {
+                    // Jika input tanggal tidak valid, fallback ke default 7 hari
+                    $endDate = now()->startOfDay();
+                    $startDate = now()->subDays(6)->startOfDay();
+                    $chartTitle = 'Daily Trend (Last 7 Days)';
+                }
+            } else {
+                // Default 7 hari
+                $endDate = now()->startOfDay();
+                $startDate = now()->subDays(6)->startOfDay();
+                $chartTitle = 'Daily Trend (Last 7 Days)';
+            }
+
+            // Loop Harian
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
                 $dateString = $date->format('Y-m-d');
-                $label = $date->format('D, M d'); // Format label: Fri, Oct 24
+                $label = $date->format('D, M d');
 
-                $income = $user->transactions()
-                    ->income()
-                    // Filter berdasarkan tanggal persis
-                    ->whereDate('date', $dateString)
-                    ->sum('amount');
-
-                $expense = $user->transactions()
-                    ->expense()
-                    ->whereDate('date', $dateString)
-                    ->sum('amount');
+                // Query (lebih efisien jika digabung, tapi terpisah lebih mudah dibaca)
+                $income = $user->transactions()->income()->whereDate('date', $dateString)->sum('amount');
+                $expense = $user->transactions()->expense()->whereDate('date', $dateString)->sum('amount');
 
                 $chartLabels[] = $label;
                 $chartIncomeData[] = $income;
                 $chartExpenseData[] = $expense;
             }
         } else { // filter === 'monthly'
-            $chartTitle = 'Monthly Trend (Last 6 Months)';
-            // Logika 6 bulan terakhir Anda (sudah benar)
-            for ($i = 5; $i >= 0; $i--) {
-                $month = now()->subMonths($i)->format('Y-m');
-                $label = now()->subMonths($i)->format('M Y'); // Format label: Oct 2025
+            if ($dateFrom && $dateTo) {
+                try {
+                    // Parse sebagai awal bulan
+                    $startDate = Carbon::parse($dateFrom)->startOfMonth();
+                    $endDate = Carbon::parse($dateTo)->startOfMonth();
+                    // Batasi maksimal 12 bulan
+                    if ($startDate->diffInMonths($endDate) > 11) { // diffInMonths(12) itu 13 bulan
+                        $startDate = $endDate->copy()->subMonths(11);
+                        $chartTitle = 'Monthly Trend (Last 12 Months)';
+                    } else {
+                        $chartTitle = 'Monthly Trend (' . $startDate->format('M Y') . ' - ' . $endDate->format('M Y') . ')';
+                    }
+                } catch (\Exception $e) {
+                    // Fallback ke default 6 bulan
+                    $endDate = now()->startOfMonth();
+                    $startDate = now()->subMonths(5)->startOfMonth();
+                    $chartTitle = 'Monthly Trend (Last 6 Months)';
+                }
+            } else {
+                // Default 6 bulan
+                $endDate = now()->startOfMonth();
+                $startDate = now()->subMonths(5)->startOfMonth();
+                $chartTitle = 'Monthly Trend (Last 6 Months)';
+            }
 
-                $income = $user->transactions()
-                    ->income()
-                    ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$month])
-                    ->sum('amount');
+            // Loop Bulanan
+            for ($date = $startDate->copy(); $date->lte($endDate); $date->addMonth()) {
+                $monthString = $date->format('Y-m');
+                $label = $date->format('M Y');
 
-                $expense = $user->transactions()
-                    ->expense()
-                    ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$month])
-                    ->sum('amount');
+                // Query per bulan (gunakan TO_CHAR atau YEAR/MONTH)
+                // Sesuaikan dengan database Anda, TO_CHAR lebih umum tapi bisa lambat
+                $income = $user->transactions()->income()->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$monthString])->sum('amount');
+                $expense = $user->transactions()->expense()->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$monthString])->sum('amount');
+                // Alternatif MySQL/MariaDB: ->whereYear('date', $date->year)->whereMonth('date', $date->month)
 
                 $chartLabels[] = $label;
                 $chartIncomeData[] = $income;
                 $chartExpenseData[] = $expense;
             }
         }
-        // --- !! CHART DATA LOGIC CHANGES END !! ---
 
 
         // ... (Kode untuk $categoryBreakdown) ...
@@ -190,7 +227,11 @@ class DashboardController extends Controller
 
 
         // ... (Kode untuk $currentMonthBudgets dan $budgetSummary) ...
-        $currentMonthBudgetsQuery = $user->budgets()->with('category')->where('month', $currentMonth);
+        $currentMonthBudgetsQuery = $user->budgets()->with('category')
+            ->whereHas('category', function ($query) {
+                $query->where('type', 'expense'); // Hanya kategori expense
+            })
+            ->where('month', $currentMonth);
         $currentMonthBudgetsUnsorted = clone $currentMonthBudgetsQuery;
         $currentMonthBudgets = $currentMonthBudgetsQuery->get()->sortByDesc(function ($budget) {
             if ($budget->limit > 0) return ($budget->spent / $budget->limit) * 100;
@@ -205,8 +246,28 @@ class DashboardController extends Controller
             $budgetSummary = (object) ['limit' => $totalBudgetLimit, 'spent' => $monthlyExpense, 'remaining' => $budgetRemaining, 'progress' => $budgetProgress, 'isOverBudget' => $isOverBudget];
         }
 
+        // dd([
+        //     'totalIncome' => $totalIncome,
+        //     'totalExpense' => $totalExpense,
+        //     'currentBalance' => $currentBalance,
+        //     'monthlyIncome' => $monthlyIncome,
+        //     'monthlyExpense' => $monthlyExpense,
+        //     'recentTransactions' => $recentTransactions,
+        //     'categoryBreakdown' => $categoryBreakdown,
+        //     'budgetSummary' => $budgetSummary,
+        //     'currentMonthBudgets' => $currentMonthBudgets,
+        //     'chartLabels' => $chartLabels,
+        //     'chartIncomeData' => $chartIncomeData,
+        //     'chartExpenseData' => $chartExpenseData,
+        //     'chartTitle' => $chartTitle,
+        //     'filter' => $filter,
+        //     'dateFrom' => $dateFrom,
+        //     'dateTo' => $dateTo,
+        // ]);
+
 
         // Kirim data baru ke view
+        // Kirim semua data ke view
         return view('dashboard', compact(
             'totalIncome',
             'totalExpense',
@@ -214,15 +275,16 @@ class DashboardController extends Controller
             'monthlyIncome',
             'monthlyExpense',
             'recentTransactions',
-            // 'monthlyData', // Hapus variabel lama
             'categoryBreakdown',
             'budgetSummary',
             'currentMonthBudgets',
-            'chartLabels',        // <-- Data Baru
-            'chartIncomeData',    // <-- Data Baru
-            'chartExpenseData',   // <-- Data Baru
-            'chartTitle',         // <-- Data Baru
-            'filter'              // <-- Filter aktif
+            'chartLabels',
+            'chartIncomeData',
+            'chartExpenseData',
+            'chartTitle',
+            'filter', // Filter aktif (daily/monthly)
+            'dateFrom', // Tanggal mulai input (jika ada)
+            'dateTo'    // Tanggal akhir input (jika ada)
         ));
     }
 }
