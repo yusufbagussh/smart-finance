@@ -4,16 +4,35 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\MachineLearningMonitoringController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\MachineLearningController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    //return to route dashboard
-    return redirect()->route('dashboard');
+    // Cek apakah pengguna sudah login
+    if (Auth::check()) {
+        // Jika sudah login, cek perannya
+        if (auth()->user()->isAdmin()) {
+            // Jika admin, arahkan ke admin.dashboard
+            return redirect()->route('admin.dashboard');
+        } else {
+            // Jika user biasa, arahkan ke dashboard biasa
+            return redirect()->route('dashboard');
+        }
+    }
+
+    // Jika belum login (guest), arahkan ke halaman login
+    return redirect()->route('login');
+});
+
+Route::get('/home', function () {
+    //return to view welcome
+    return view('welcome');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
@@ -60,6 +79,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Category Management
     Route::resource('categories', CategoryController::class);
+
+    Route::get('/monitoring', [MachineLearningMonitoringController::class, 'index'])->name('monitoring.index');
 });
 
 Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function () {

@@ -16,6 +16,7 @@ class Budget extends Model
         'month',
         'limit',
         'spent',
+        'category_id'
     ];
 
     protected $casts = [
@@ -27,6 +28,11 @@ class Budget extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id', 'category_id');
     }
 
     // Helper methods
@@ -51,9 +57,11 @@ class Budget extends Model
     {
         $spent = $this->user->transactions()
             ->where('type', 'expense')
+            ->where('category_id', $this->category_id)
             ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$this->month])
             ->sum('amount');
 
+        // Gunakan update agar tidak memicu event/observer lain secara tidak sengaja
         $this->update(['spent' => $spent]);
         return $this;
     }

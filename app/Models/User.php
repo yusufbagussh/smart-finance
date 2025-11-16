@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'deactivated_at',
     ];
 
     /**
@@ -32,6 +33,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'deactivated_at',
     ];
 
     /**
@@ -77,5 +79,15 @@ class User extends Authenticatable
     public function currentBalance()
     {
         return $this->totalIncome() - $this->totalExpense();
+    }
+
+    public function isActive(): bool
+    {
+        return is_null($this->deactivated_at);
+    }
+
+    public function isDeactivated(): bool
+    {
+        return !$this->isActive();
     }
 }

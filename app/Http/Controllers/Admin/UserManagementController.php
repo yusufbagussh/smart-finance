@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserManagementController extends Controller
 {
@@ -96,14 +97,21 @@ class UserManagementController extends Controller
 
     public function toggleStatus(User $user)
     {
-        if ($user->isAdmin()) {
-            return back()->with('error', 'Cannot modify admin user.');
+        // Pastikan yang diubah bukan admin lain atau diri sendiri
+        if ($user->isAdmin() || $user->id === Auth::id()) {
+            return back()->withErrors(['error' => 'You cannot change the status of this user.']);
         }
 
-        // Implement your status toggle logic here
-        // For example, you could add an 'active' field to users table
+        if ($user->isActive()) {
+            $user->deactivated_at = now();
+            $message = 'User deactivated successfully.';
+        } else {
+            $user->deactivated_at = null;
+            $message = 'User activated successfully.';
+        }
+        $user->save();
 
-        return back()->with('success', 'User status updated successfully.');
+        return back()->with('success', $message);
     }
 
     public function destroy(User $user)

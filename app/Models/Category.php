@@ -16,6 +16,7 @@ class Category extends Model
         'description',
         'color',
         'icon',
+        'type'
     ];
 
     // Relationships

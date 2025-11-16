@@ -7,113 +7,59 @@
             </a>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 <i class="fas fa-chart-line mr-2"></i>
-                {{ __('Expense Predictions') }}
+                {{-- {{ __('Expense Predictions') }} --}}
             </h2>
         </div>
     </x-slot>
 
-    <!-- Prediction Overview -->
-    <div class="mb-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg shadow-lg overflow-hidden">
-        <div class="p-6 text-white">
-            <h3 class="text-2xl font-bold mb-2">
-                <i class="fas fa-crystal-ball mr-2"></i>
-                AI Expense Predictions
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div
+            class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+            <h3 class="text-lg font-semibold text-indigo-100 mb-2">
+                <i class="fas fa-calculator mr-2"></i>
+                Predicted Expense (Next 30 Days)
             </h3>
-            <p class="text-green-100">
-                Based on your spending patterns from the last 3 months, here are our predictions for your upcoming
-                expenses.
+            <div class="text-4xl font-bold">
+                {{ $nextMonthPrediction }}
+            </div>
+            <p class="text-indigo-200 text-sm mt-2">
+                This is the total estimated spending based on your historical data.
             </p>
+        </div>
+
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                <i class="fas fa-info-circle mr-2"></i>
+                How This Works
+            </h3>
+            <p class="text-sm text-gray-600">
+                Our AI (ARIMA Model) analyzes your past daily spending to find patterns and forecast your expenses for
+                the next 30 days.
+            </p>
+            @if (empty($forecastData))
+                <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    <strong>Not Enough Data.</strong> We need more transaction history to generate a forecast.
+                </div>
+            @endif
         </div>
     </div>
 
-    <!-- Predictions Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        @foreach ($predictions as $index => $prediction)
-            <div
-                class="bg-white overflow-hidden shadow-sm sm:rounded-lg {{ $index === 0 ? 'ring-2 ring-green-500' : '' }}">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">
-                            {{ $prediction['month'] }}
-                        </h3>
-                        @if ($index === 0)
-                            <span class="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                                Next Month
-                            </span>
-                        @endif
-                    </div>
-
-                    <!-- Predicted Amount -->
-                    <div class="text-center mb-4">
-                        <p class="text-3xl font-bold text-gray-900 mb-2">
-                            Rp {{ number_format($prediction['predicted_expense'], 0, ',', '.') }}
-                        </p>
-                        <div class="flex items-center justify-center space-x-2">
-                            <div class="flex items-center">
-                                <i
-                                    class="fas fa-{{ $prediction['trend'] === 'increase' ? 'arrow-up text-red-500' : 'arrow-down text-green-500' }} mr-1"></i>
-                                <span class="text-sm text-gray-600">
-                                    {{ $prediction['trend'] === 'increase' ? 'Increase' : 'Decrease' }} expected
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Confidence Score -->
-                    <div class="mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-gray-700">Confidence</span>
-                            <span class="text-sm font-semibold text-gray-900">{{ $prediction['confidence'] }}%</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-blue-600 h-2 rounded-full" style="width: {{ $prediction['confidence'] }}%">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Prediction Quality Indicator -->
-                    <div class="text-center">
-                        @if ($prediction['confidence'] >= 85)
-                            <span
-                                class="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                High Confidence
-                            </span>
-                        @elseif($prediction['confidence'] >= 70)
-                            <span
-                                class="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-sm font-medium rounded-full">
-                                <i class="fas fa-exclamation-circle mr-1"></i>
-                                Medium Confidence
-                            </span>
-                        @else
-                            <span
-                                class="inline-flex items-center px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
-                                <i class="fas fa-exclamation-triangle mr-1"></i>
-                                Low Confidence
-                            </span>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        @endforeach
-    </div>
-
-    <!-- Prediction Chart -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-8">
         <div class="p-6">
             <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 <i class="fas fa-chart-area mr-2"></i>
-                Prediction Trend
+                30-Day Predicted Spending Trend
             </h3>
-            <div class="relative h-64">
+            <div class="relative h-96"> {{-- Dibuat lebih tinggi --}}
                 <canvas id="predictionChart"></canvas>
             </div>
         </div>
     </div>
 
     <!-- Model Information -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- How Predictions Work -->
+    {{-- <div class="grid grid-cols-1 lg:grid-cols-2 gap-8"> --}}
+    {{-- <!-- How Predictions Work -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -147,111 +93,145 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> --}}
 
-        <!-- Factors Affecting Predictions -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>
-                    Important Notes
-                </h3>
-                <div class="space-y-4">
-                    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <div class="flex">
-                            <i class="fas fa-lightbulb text-yellow-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="text-sm font-medium text-yellow-800 mb-1">Accuracy
-                                    Improves Over Time</p>
-                                <p class="text-xs text-yellow-700">
-                                    The more transaction data you have, the more accurate our predictions become.
-                                </p>
-                            </div>
+    <!-- Factors Affecting Predictions -->
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                Important Notes
+            </h3>
+            <div class="space-y-4">
+                <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div class="flex">
+                        <i class="fas fa-lightbulb text-yellow-600 mr-3 mt-1"></i>
+                        <div>
+                            <p class="text-sm font-medium text-yellow-800 mb-1">Accuracy
+                                Improves Over Time</p>
+                            <p class="text-xs text-yellow-700">
+                                The more transaction data you have, the more accurate our predictions become.
+                            </p>
                         </div>
                     </div>
+                </div>
 
-                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div class="flex">
-                            <i class="fas fa-sync text-blue-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="text-sm font-medium text-blue-800 mb-1">Regular Updates</p>
-                                <p class="text-xs text-blue-700">
-                                    Predictions are updated daily based on your latest transactions and spending
-                                    patterns.
-                                </p>
-                            </div>
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex">
+                        <i class="fas fa-sync text-blue-600 mr-3 mt-1"></i>
+                        <div>
+                            <p class="text-sm font-medium text-blue-800 mb-1">Regular Updates</p>
+                            <p class="text-xs text-blue-700">
+                                Predictions are updated daily based on your latest transactions and spending
+                                patterns.
+                            </p>
                         </div>
                     </div>
+                </div>
 
-                    <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <div class="flex">
-                            <i class="fas fa-shield-alt text-gray-600 mr-3 mt-1"></i>
-                            <div>
-                                <p class="text-sm font-medium text-gray-800 mb-1">Privacy & Security
-                                </p>
-                                <p class="text-xs text-gray-600">
-                                    All predictions are processed locally and your data never leaves our secure servers.
-                                </p>
-                            </div>
+                <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <div class="flex">
+                        <i class="fas fa-shield-alt text-gray-600 mr-3 mt-1"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-800 mb-1">Privacy & Security
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                All predictions are processed locally and your data never leaves our secure servers.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    {{-- </div> --}}
+
     @push('scripts')
+        {{-- Kita menggunakan script CDN Chart.js jika belum ada --}}
+        {{-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> --}}
+
         <script>
-            // Prediction Chart
-            const predictionCtx = document.getElementById('predictionChart').getContext('2d');
-            const predictionChart = new Chart(predictionCtx, {
-                type: 'line',
-                data: {
-                    labels: {!! json_encode(collect($predictions)->pluck('month')) !!},
-                    datasets: [{
-                        label: 'Predicted Expenses',
-                        data: {!! json_encode(collect($predictions)->pluck('predicted_expense')) !!},
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#3B82F6',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
+            // Memastikan ada data sebelum mencoba membuat chart
+            @if (!empty($forecastData))
+                // 1. Ambil data dari Controller
+                const forecastData = @json($forecastData);
+
+                // 2. Proses data untuk Chart.js menggunakan JavaScript
+                const labels = forecastData.map(item => item.date);
+                const data = forecastData.map(item => item.amount);
+
+                // 3. Render Chart
+                const predictionCtx = document.getElementById('predictionChart').getContext('2d');
+                const predictionChart = new Chart(predictionCtx, {
+                    type: 'line',
+                    data: {
+                        labels: labels, // Sumbu X (Tanggal)
+                        datasets: [{
+                            label: 'Predicted Expenses',
+                            data: data, // Sumbu Y (Amount)
+                            borderColor: '#3B82F6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#3B82F6',
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed.y !== null) {
+                                            // Format ke Rupiah
+                                            label += new Intl.NumberFormat('id-ID', {
+                                                style: 'currency',
+                                                currency: 'IDR'
+                                            }).format(context.parsed.y);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return 'Predicted: Rp ' + context.parsed.y.toLocaleString('id-ID');
+                        scales: {
+                            y: {
+                                beginAtZero: false, // Prediksi tidak harus mulai dari 0
+                                ticks: {
+                                    callback: function(value) {
+                                        // Format Sumbu Y (misal: 10M, 5M)
+                                        if (value >= 1000000) {
+                                            return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                                        } else if (value >= 1000) {
+                                            return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                                        }
+                                        return 'Rp ' + value;
+                                    }
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    // Hanya tampilkan beberapa label tanggal agar tidak penuh
+                                    maxTicksLimit: 10
                                 }
                             }
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
                         }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback: function(value) {
-                                    return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
                     }
-                }
-            });
+                });
+            @endif
         </script>
     @endpush
 </x-app-layout>

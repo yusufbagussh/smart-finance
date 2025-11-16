@@ -18,7 +18,6 @@ return new class extends Migration
             $table->decimal('limit', 12, 2);
             $table->decimal('spent', 12, 2)->default(0);
             $table->timestamps();
-            $table->unique(['user_id', 'month']);
         });
     }
 

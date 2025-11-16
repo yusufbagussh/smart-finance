@@ -172,6 +172,10 @@
                                 <i class="fas fa-users mr-2"></i>
                                 {{ __('Users') }}
                             </x-nav-link>
+                            <x-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
+                                <i class="fas fa-heartbeat mr-2"></i>
+                                {{ __('Monitoring') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('dashboard')" :active="false">
                                 <i class="fas fa-eye mr-2"></i>
                                 {{ __('User View') }}
@@ -224,6 +228,20 @@
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ml-6">
+                <!-- Add this button right here -->
+                <button id="theme-toggle" type="button"
+                    class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                    </svg>
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                            fill-rule="evenodd" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
@@ -246,15 +264,18 @@
                                 <i class="fas fa-crown mr-1"></i>
                                 Administrator
                             </div>
-                            {{-- <x-dropdown-link :href="route('admin.dashboard')"> --}}
-                            <x-dropdown-link :href="route('admin.dashboard')">
-                                <i class="fas fa-tachometer-alt mr-2"></i>
-                                {{ __('Admin Dashboard') }}
-                            </x-dropdown-link>
-                            <x-dropdown-link :href="route('dashboard')">
-                                <i class="fas fa-eye mr-2"></i>
-                                {{ __('Switch to User View') }}
-                            </x-dropdown-link>
+                            @if (request()->routeIs('admin.*'))
+                                <x-dropdown-link :href="route('dashboard')">
+                                    <i class="fas fa-eye mr-2"></i>
+                                    {{ __('Switch to User View') }}
+                                </x-dropdown-link>
+                            @else
+                                {{-- <x-dropdown-link :href="route('admin.dashboard')"> --}}
+                                <x-dropdown-link :href="route('admin.dashboard')">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>
+                                    {{ __('Switch to Admin View') }}
+                                </x-dropdown-link>
+                            @endif
                             <div class="border-t border-gray-200 dark:border-gray-600"></div>
                         @endif
 
@@ -298,22 +319,54 @@
         <div class="pt-2 pb-3 space-y-1">
             @if (auth()->user()->isAdmin())
                 {{-- Admin Mobile Navigation --}}
-                <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                    <i class="fas fa-tachometer-alt mr-2"></i>
-                    {{ __('Admin Dashboard') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                    <i class="fas fa-users mr-2"></i>
-                    {{ __('Users') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
-                    <i class="fas fa-tags mr-2"></i>
-                    {{ __('Categories') }}
-                </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.users.index')" :active="false">
-                    <i class="fas fa-eye mr-2"></i>
-                    {{ __('User View') }}
-                </x-responsive-nav-link>
+                @if (request()->routeIs('admin.*'))
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <i class="fas fa-tachometer-alt mr-2"></i>
+                        {{ __('Admin Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
+                        <i class="fas fa-users mr-2"></i>
+                        {{ __('Users') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
+                        <i class="fas fa-tags mr-2"></i>
+                        {{ __('Categories') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
+                        <i class="fas fa-tags mr-2"></i>
+                        {{ __('Monitoring') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('dashboard')" :active="false">
+                        <i class="fas fa-eye mr-2"></i>
+                        {{ __('User View') }}
+                    </x-responsive-nav-link>
+                @else
+                    {{-- User Mobile Navigation --}}
+                    <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <i class="fas fa-home mr-2"></i>
+                        {{ __('Dashboard') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
+                        <i class="fas fa-exchange-alt mr-2"></i>
+                        {{ __('Transactions') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
+                        <i class="fas fa-chart-pie mr-2"></i>
+                        {{ __('Budget') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
+                        <i class="fas fa-brain mr-2"></i>
+                        {{ __('AI Features') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                        <i class="fas fa-file-download mr-2"></i>
+                        {{ __('Reports') }}
+                    </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                        <i class="fas fa-eye mr-2"></i>
+                        {{ __('Admin View') }}
+                    </x-responsive-nav-link>
+                @endif
             @else
                 {{-- User Mobile Navigation --}}
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
@@ -332,6 +385,10 @@
                     <i class="fas fa-brain mr-2"></i>
                     {{ __('AI Features') }}
                 </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                    <i class="fas fa-file-download mr-2"></i>
+                    {{ __('Reports') }}
+                </x-responsive-nav-link>
             @endif
         </div>
 
@@ -349,6 +406,26 @@
             </div>
 
             <div class="mt-3 space-y-1">
+                <div class="px-4 py-2 flex items-center justify-between">
+                    <span class="font-medium text-base text-gray-800 dark:text-gray-200">Theme</span>
+                    {{-- Gunakan ID unik tapi class yg sama untuk styling --}}
+                    <button id="theme-toggle-mobile" type="button"
+                        class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                        {{-- Salin SVG Dark Mode (Bulan) --}}
+                        <svg id="theme-toggle-dark-icon-mobile" class="hidden w-5 h-5" fill="currentColor"
+                            viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+                        </svg>
+                        {{-- Salin SVG Light Mode (Matahari) --}}
+                        <svg id="theme-toggle-light-icon-mobile" class="hidden w-5 h-5" fill="currentColor"
+                            viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                                fill-rule="evenodd" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+
                 <x-responsive-nav-link :href="route('profile.edit')">
                     <i class="fas fa-user mr-2"></i>
                     {{ __('Profile') }}
