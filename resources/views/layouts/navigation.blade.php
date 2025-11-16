@@ -137,11 +137,9 @@
 
 {{-- resources/views/layouts/navigation.blade.php - UPDATE --}}
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-    <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
-                <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}">
                         <span class="text-xl font-bold text-gray-800 dark:text-gray-200">
@@ -154,7 +152,6 @@
                     </a>
                 </div>
 
-                <!-- Navigation Links (Hidden on mobile, shown on desktop) -->
                 <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                     @if (auth()->user()->isAdmin())
                         {{-- Cek route --}}
@@ -181,7 +178,7 @@
                                 {{ __('User View') }}
                             </x-nav-link>
                         @else
-                            {{-- User Navigation --}}
+                            {{-- User Navigation (untuk Admin) --}}
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                                 <i class="fas fa-home mr-2"></i>
                                 {{ __('Dashboard') }}
@@ -190,10 +187,25 @@
                                 <i class="fas fa-exchange-alt mr-2"></i>
                                 {{ __('Transactions') }}
                             </x-nav-link>
+
+                            {{-- !! TAMBAHAN 1 (Desktop Admin) !! --}}
+                            <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
+                                request()->routeIs('investment-transactions.*')">
+                                <i class="fas fa-wallet mr-2"></i>
+                                {{ __('Portfolios') }}
+                            </x-nav-link>
+
                             <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                                 <i class="fas fa-chart-pie mr-2"></i>
                                 {{ __('Budget') }}
                             </x-nav-link>
+
+                            {{-- !! TAMBAHAN 2 (Desktop Admin) !! --}}
+                            <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                                <i class="fas fa-gem mr-2"></i>
+                                {{ __('Assets') }}
+                            </x-nav-link>
+
                             <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                                 <i class="fas fa-brain mr-2"></i>
                                 {{ __('AI Features') }}
@@ -205,7 +217,7 @@
                         @endif
                         {{-- Admin Navigation --}}
                     @else
-                        {{-- User Navigation --}}
+                        {{-- User Navigation (untuk User Biasa) --}}
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                             <i class="fas fa-home mr-2"></i>
                             {{ __('Dashboard') }}
@@ -214,10 +226,25 @@
                             <i class="fas fa-exchange-alt mr-2"></i>
                             {{ __('Transactions') }}
                         </x-nav-link>
+
+                        {{-- !! TAMBAHAN 1 (Desktop User) !! --}}
+                        <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
+                            request()->routeIs('investment-transactions.*')">
+                            <i class="fas fa-wallet mr-2"></i>
+                            {{ __('Portfolios') }}
+                        </x-nav-link>
+
                         <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                             <i class="fas fa-chart-pie mr-2"></i>
                             {{ __('Budget') }}
                         </x-nav-link>
+
+                        {{-- !! TAMBAHAN 2 (Desktop User) !! --}}
+                        <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                            <i class="fas fa-gem mr-2"></i>
+                            {{ __('Assets') }}
+                        </x-nav-link>
+
                         <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                             <i class="fas fa-brain mr-2"></i>
                             {{ __('AI Features') }}
@@ -226,9 +253,7 @@
                 </div>
             </div>
 
-            <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ml-6">
-                <!-- Add this button right here -->
                 <button id="theme-toggle" type="button"
                     class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
                     <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
@@ -284,7 +309,6 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
-                        <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
@@ -298,7 +322,6 @@
                 </x-dropdown>
             </div>
 
-            <!-- Hamburger (Mobile) -->
             <div class="-mr-2 flex items-center sm:hidden">
                 <button @click="open = ! open"
                     class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
@@ -314,7 +337,6 @@
         </div>
     </div>
 
-    <!-- Responsive Navigation Menu -->
     <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @if (auth()->user()->isAdmin())
@@ -341,7 +363,7 @@
                         {{ __('User View') }}
                     </x-responsive-nav-link>
                 @else
-                    {{-- User Mobile Navigation --}}
+                    {{-- User Mobile Navigation (untuk Admin) --}}
                     <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <i class="fas fa-home mr-2"></i>
                         {{ __('Dashboard') }}
@@ -350,10 +372,24 @@
                         <i class="fas fa-exchange-alt mr-2"></i>
                         {{ __('Transactions') }}
                     </x-responsive-nav-link>
+
+                    {{-- !! TAMBAHAN 1 (Mobile Admin) !! --}}
+                    <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
+                        <i class="fas fa-wallet mr-2"></i>
+                        {{ __('Portfolios') }}
+                    </x-responsive-nav-link>
+
                     <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                         <i class="fas fa-chart-pie mr-2"></i>
                         {{ __('Budget') }}
                     </x-responsive-nav-link>
+
+                    {{-- !! TAMBAHAN 2 (Mobile Admin) !! --}}
+                    <x-responsive-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                        <i class="fas fa-gem mr-2"></i>
+                        {{ __('Assets') }}
+                    </x-responsive-nav-link>
+
                     <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                         <i class="fas fa-brain mr-2"></i>
                         {{ __('AI Features') }}
@@ -368,7 +404,7 @@
                     </x-responsive-nav-link>
                 @endif
             @else
-                {{-- User Mobile Navigation --}}
+                {{-- User Mobile Navigation (untuk User Biasa) --}}
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                     <i class="fas fa-home mr-2"></i>
                     {{ __('Dashboard') }}
@@ -377,10 +413,24 @@
                     <i class="fas fa-exchange-alt mr-2"></i>
                     {{ __('Transactions') }}
                 </x-responsive-nav-link>
+
+                {{-- !! TAMBAHAN 1 (Mobile User) !! --}}
+                <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
+                    <i class="fas fa-wallet mr-2"></i>
+                    {{ __('Portfolios') }}
+                </x-responsive-nav-link>
+
                 <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                     <i class="fas fa-chart-pie mr-2"></i>
                     {{ __('Budget') }}
                 </x-responsive-nav-link>
+
+                {{-- !! TAMBAHAN 2 (Mobile User) !! --}}
+                <x-responsive-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                    <i class="fas fa-gem mr-2"></i>
+                    {{ __('Assets') }}
+                </x-responsive-nav-link>
+
                 <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                     <i class="fas fa-brain mr-2"></i>
                     {{ __('AI Features') }}
@@ -392,7 +442,6 @@
             @endif
         </div>
 
-        <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800 dark:text-gray-200">
@@ -431,7 +480,6 @@
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 
-                <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
