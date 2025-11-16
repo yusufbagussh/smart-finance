@@ -139,12 +139,15 @@
                     <!-- Tip 2: Goals -->
                     <div class="flex items-start">
                         <div class="p-2 bg-green-100 dark:bg-green-900 rounded-lg mr-4 flex-shrink-0">
-                            <i class="fas fa-target text-green-600 dark:text-green-400"></i>
+                            <i class="fas fa-bullseye text-green-600 dark:text-green-400"></i>
                         </div>
                         <div>
                             <h5 class="font-semibold text-gray-900 dark:text-gray-100 mb-1">Set Clear Goals</h5>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Define specific financial goals
-                                like emergency fund, vacation, or investment targets.</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                                Define specific
+                                financial goals
+                                like emergency fund, vacation, or investment targets.
+                            </p>
                         </div>
                     </div>
                     <!-- Tip 3: Review -->

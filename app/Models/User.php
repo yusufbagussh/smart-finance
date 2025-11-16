@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -68,12 +70,22 @@ class User extends Authenticatable
 
     public function totalIncome()
     {
-        return $this->transactions()->where('type', 'income')->sum('amount');
+        return
+            $this
+            ->transactions()
+            ->whereNull('investment_transaction_id')
+            ->where('type', 'income')
+            ->sum('amount');
     }
 
     public function totalExpense()
     {
-        return $this->transactions()->where('type', 'expense')->sum('amount');
+        return
+            $this
+            ->transactions()
+            ->where('type', 'expense')
+            ->whereNull('investment_transaction_id')
+            ->sum('amount');
     }
 
     public function currentBalance()
@@ -89,5 +101,22 @@ class User extends Authenticatable
     public function isDeactivated(): bool
     {
         return !$this->isActive();
+    }
+
+    /**
+     * Seorang User bisa memiliki banyak Portofolio.
+     */
+    public function portfolios(): HasMany
+    {
+        return $this->hasMany(Portfolio::class);
+    }
+
+    /**
+     * Seorang User memiliki banyak Transaksi Investasi
+     * MELALUI Portofolio miliknya.
+     */
+    public function investmentTransactions(): HasManyThrough
+    {
+        return $this->hasManyThrough(InvestmentTransaction::class, Portfolio::class);
     }
 }

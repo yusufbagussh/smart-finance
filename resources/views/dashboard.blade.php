@@ -10,14 +10,15 @@
             </div>
         </div>
     </x-slot>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
                     <i class="fas fa-wallet text-blue-600 dark:text-blue-400 text-xl"></i>
                 </div>
                 <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Balance</p>
+                    {{-- Ubah nama agar lebih jelas --}}
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Cash Balance</p>
                     <p
                         class="text-2xl font-bold {{ $currentBalance >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
                         Rp {{ number_format($currentBalance, 0, ',', '.') }}
@@ -25,6 +26,40 @@
                 </div>
             </div>
         </div>
+
+        {{-- KARTU 2: TOTAL INVESTMENT VALUE --}}
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            {{-- Kita buat bisa diklik untuk ke halaman portofolio --}}
+            <a href="{{ route('portfolios.index') }}" class="block hover:opacity-80 transition-opacity">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-indigo-100 dark:bg-indigo-900">
+                        <i class="fas fa-landmark text-indigo-600 dark:text-indigo-400 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Investment Value</p>
+                        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                            Rp {{ number_format($totalInvestmentValue, 0, ',', '.') }}
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        {{-- KARTU 3: TOTAL NET WORTH (KARTU BARU) --}}
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="p-3 rounded-full bg-purple-100 dark:bg-purple-900">
+                    <i class="fas fa-file-invoice-dollar text-purple-600 dark:text-purple-400 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Net Worth</p>
+                    <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        Rp {{ number_format($totalNetWorth, 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
@@ -338,11 +373,17 @@
                 Quick Actions
             </h3>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <a href="{{ route('transactions.create') }}"
+                {{-- <a href="{{ route('transactions.create') }}"
                     class="flex flex-col items-center p-4 bg-green-50 dark:bg-green-900 rounded-lg hover:bg-green-100 dark:hover:bg-green-800 transition-colors">
                     <i class="fas fa-plus-circle text-green-600 dark:text-green-400 text-2xl mb-2"></i>
                     <span class="text-sm font-medium text-center text-green-700 dark:text-green-300">Add
                         Transaction</span>
+                </a> --}}
+                <a href="{{ route('investment-transactions.create') }}"
+                    class="flex flex-col items-center p-4 bg-indigo-50 dark:bg-indigo-900 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-800 transition-colors">
+                    <i class="fas fa-chart-line text-indigo-600 dark:text-indigo-400 text-2xl mb-2"></i>
+                    <span class="text-sm font-medium text-center text-indigo-700 dark:text-indigo-300">Add
+                        Investment</span>
                 </a>
                 <a href="{{ route('budgets.create') }}"
                     class="flex flex-col items-center p-4 bg-blue-50 dark:bg-blue-900 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-800 transition-colors">
