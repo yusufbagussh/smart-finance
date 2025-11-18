@@ -165,6 +165,11 @@
                                 <i class="fas fa-tags mr-2"></i>
                                 {{ __('Categories') }}
                             </x-nav-link>
+                            {{-- !! TAMBAHAN 2 (Desktop Admin) !! --}}
+                            <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                                <i class="fas fa-gem mr-2"></i>
+                                {{ __('Assets') }}
+                            </x-nav-link>
                             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
                                 <i class="fas fa-users mr-2"></i>
                                 {{ __('Users') }}
@@ -183,6 +188,12 @@
                                 <i class="fas fa-home mr-2"></i>
                                 {{ __('Dashboard') }}
                             </x-nav-link>
+
+                            <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
+                                <i class="fas fa-wallet mr-2"></i>
+                                {{ __('Accounts') }}
+                            </x-nav-link>
+
                             <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                                 <i class="fas fa-exchange-alt mr-2"></i>
                                 {{ __('Transactions') }}
@@ -198,12 +209,6 @@
                             <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                                 <i class="fas fa-chart-pie mr-2"></i>
                                 {{ __('Budget') }}
-                            </x-nav-link>
-
-                            {{-- !! TAMBAHAN 2 (Desktop Admin) !! --}}
-                            <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                                <i class="fas fa-gem mr-2"></i>
-                                {{ __('Assets') }}
                             </x-nav-link>
 
                             <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
@@ -222,6 +227,12 @@
                             <i class="fas fa-home mr-2"></i>
                             {{ __('Dashboard') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
+                            <i class="fas fa-wallet mr-2"></i>
+                            {{ __('Accounts') }}
+                        </x-nav-link>
+
                         <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                             <i class="fas fa-exchange-alt mr-2"></i>
                             {{ __('Transactions') }}
@@ -237,12 +248,6 @@
                         <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                             <i class="fas fa-chart-pie mr-2"></i>
                             {{ __('Budget') }}
-                        </x-nav-link>
-
-                        {{-- !! TAMBAHAN 2 (Desktop User) !! --}}
-                        <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                            <i class="fas fa-gem mr-2"></i>
-                            {{ __('Assets') }}
                         </x-nav-link>
 
                         <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
@@ -354,6 +359,10 @@
                         <i class="fas fa-tags mr-2"></i>
                         {{ __('Categories') }}
                     </x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
+                        <i class="fas fa-gem mr-2"></i>
+                        {{ __('Assets') }}
+                    </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
                         <i class="fas fa-tags mr-2"></i>
                         {{ __('Monitoring') }}
@@ -368,6 +377,12 @@
                         <i class="fas fa-home mr-2"></i>
                         {{ __('Dashboard') }}
                     </x-responsive-nav-link>
+
+                    <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
+                        <i class="fas fa-wallet mr-2"></i>
+                        {{ __('Accounts') }}
+                    </x-responsive-nav-link>
+
                     <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                         <i class="fas fa-exchange-alt mr-2"></i>
                         {{ __('Transactions') }}
@@ -382,12 +397,6 @@
                     <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                         <i class="fas fa-chart-pie mr-2"></i>
                         {{ __('Budget') }}
-                    </x-responsive-nav-link>
-
-                    {{-- !! TAMBAHAN 2 (Mobile Admin) !! --}}
-                    <x-responsive-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                        <i class="fas fa-gem mr-2"></i>
-                        {{ __('Assets') }}
                     </x-responsive-nav-link>
 
                     <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
@@ -409,6 +418,12 @@
                     <i class="fas fa-home mr-2"></i>
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
+                    <i class="fas fa-wallet mr-2"></i>
+                    {{ __('Accounts') }}
+                </x-responsive-nav-link>
+
                 <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                     <i class="fas fa-exchange-alt mr-2"></i>
                     {{ __('Transactions') }}
@@ -423,12 +438,6 @@
                 <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                     <i class="fas fa-chart-pie mr-2"></i>
                     {{ __('Budget') }}
-                </x-responsive-nav-link>
-
-                {{-- !! TAMBAHAN 2 (Mobile User) !! --}}
-                <x-responsive-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                    <i class="fas fa-gem mr-2"></i>
-                    {{ __('Assets') }}
                 </x-responsive-nav-link>
 
                 <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">

@@ -62,6 +62,14 @@ class User extends Authenticatable
         return $this->hasMany(Budget::class);
     }
 
+    /**
+     * User memiliki banyak Akun (Dompet, Bank, dll).
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
     // Helper methods
     public function isAdmin()
     {

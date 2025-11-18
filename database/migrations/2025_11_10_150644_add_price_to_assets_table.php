@@ -6,18 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('assets', function (Blueprint $table) {
-            // Tambahkan kolom baru untuk menyimpan tanggal
-            $table->dateTime('price_last_updated_at')->nullable()->after('current_price');
+            // Tambahkan kolom harga saat ini, default 0
+            $table->decimal('current_price', 18, 2)->default(0)->after('price_unit');
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('assets', function (Blueprint $table) {
-            $table->dropColumn('price_last_updated_at');
+            $table->dropColumn('current_price');
         });
     }
 };

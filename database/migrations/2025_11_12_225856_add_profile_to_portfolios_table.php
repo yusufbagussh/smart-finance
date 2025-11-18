@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('portfolios', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->string('name');
-            $table->text('description')->nullable();
+        Schema::table('portfolios', function (Blueprint $table) {
+            // 1. Profil Risiko (Enum untuk pilihan terbatas)
             $table->enum('risk_profile', ['conservative', 'moderate', 'aggressive'])
                 ->nullable()
                 ->after('description')
@@ -36,7 +33,6 @@ return new class extends Migration
             // 5. Preferensi Risiko (Text untuk catatan)
             $table->text('risk_tolerance_notes')->nullable()->after('future_plans')
                 ->comment('Catatan pribadi pengguna tentang toleransi risiko');
-            $table->timestamps();
         });
     }
 
@@ -45,6 +41,15 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('portfolios');
+        Schema::table('portfolios', function (Blueprint $table) {
+            // Hapus semua kolom dalam array
+            $table->dropColumn([
+                'risk_profile',
+                'goal',
+                'time_horizon',
+                'future_plans',
+                'risk_tolerance_notes'
+            ]);
+        });
     }
 };

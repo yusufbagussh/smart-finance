@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
@@ -34,6 +35,12 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
 Route::get('/home', function () {
     //return to view welcome
     return view('welcome');
@@ -64,19 +71,18 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('portfolios', PortfolioController::class);
 
-    // Rute CRUD untuk Aset (untuk update harga manual)
-    // Kita mungkin hanya butuh index, edit, update
-    Route::resource('assets', AssetController::class);
+    // Account Management
+    Route::resource('accounts', AccountController::class);
 
     // Rute untuk Transaksi (dari langkah sebelumnya)
     Route::resource('investment-transactions', InvestmentTransactionController::class)->except(['index', 'show']);
 });
 
+Route::middleware(['auth', 'admin'])->group(function () {
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Rute CRUD untuk Aset (untuk update harga manual)
+    // Kita mungkin hanya butuh index, edit, update
+    Route::resource('assets', AssetController::class);
 });
 
 // Admin Routes (hanya untuk admin)
@@ -93,6 +99,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Category Management
     Route::resource('categories', CategoryController::class);
 
+    // Machine Learning Monitoring
     Route::get('/monitoring', [MachineLearningMonitoringController::class, 'index'])->name('monitoring.index');
 });
 

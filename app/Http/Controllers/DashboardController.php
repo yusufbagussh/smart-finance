@@ -175,7 +175,7 @@ class DashboardController extends Controller
         }
 
 
-        // ... (Kode untuk $categoryBreakdown) ...
+        // Breakdown Kategori (KONSUMTIF)
         $categoryBreakdown = $user->transactions()
             ->expense()
             ->whereNull('investment_transaction_id') // <-- FILTER
@@ -185,17 +185,19 @@ class DashboardController extends Controller
             ->orderBy('total', 'desc')->get();
 
 
-        // ... (Kode untuk $currentMonthBudgets dan $budgetSummary) ...
+        // Budget (Menggunakan data expense yang sudah bersih)
         $currentMonthBudgetsQuery = $user->budgets()->with('category')
             ->whereHas('category', function ($query) {
                 $query->where('type', 'expense'); // Hanya kategori expense
             })
             ->where('month', $currentMonth);
+
         $currentMonthBudgetsUnsorted = clone $currentMonthBudgetsQuery;
         $currentMonthBudgets = $currentMonthBudgetsQuery->get()->sortByDesc(function ($budget) {
             if ($budget->limit > 0) return ($budget->spent / $budget->limit) * 100;
             return -1;
         });
+
         $totalBudgetLimit = $currentMonthBudgetsUnsorted->sum('limit');
         $budgetSummary = null;
         if ($totalBudgetLimit > 0) {

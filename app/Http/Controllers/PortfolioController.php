@@ -349,8 +349,6 @@ class PortfolioController extends Controller
             **Anda WAJIB mengikuti format, struktur, dan gaya bahasa dari [CONTOH JAWABAN IDEAL] di atas.**
             ";
 
-            dd($prompt);
-
             // E. Panggil Gemini
             try {
                 if (!env('GEMINI_API_KEY')) {
