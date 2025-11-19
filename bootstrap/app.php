@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withSchedule(function (Illuminate\Console\Scheduling\Schedule $schedule) { // <-- UBAH BARIS INI
-        $schedule->command('app:update-asset-prices')->dailyAt('21:50');
+        $schedule->command('app:update-asset-prices')->dailyAt('05:05');
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
