@@ -1,15 +1,20 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\MachineLearningMonitoringController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\AssetController;
+use App\Http\Controllers\InvestmentTransactionController;
 use App\Http\Controllers\MachineLearningController;
+use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TransactionController;
+use App\Models\Asset;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -28,6 +33,12 @@ Route::get('/', function () {
 
     // Jika belum login (guest), arahkan ke halaman login
     return redirect()->route('login');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 Route::get('/home', function () {
@@ -57,13 +68,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/ml-features/classify', [MachineLearningController::class, 'classifyTransaction'])->name('ml.classify');
     Route::get('/ml-features/predictions', [MachineLearningController::class, 'predictions'])->name('ml.predictions');
     Route::get('/ml-features/recommendations', [MachineLearningController::class, 'recommendations'])->name('ml.recommendations');
+
+    Route::resource('portfolios', PortfolioController::class);
+
+    // Account Management
+    Route::resource('accounts', AccountController::class);
+
+    // Rute untuk Transaksi (dari langkah sebelumnya)
+    Route::resource('investment-transactions', InvestmentTransactionController::class)->except(['index', 'show']);
 });
 
+Route::middleware(['auth', 'admin'])->group(function () {
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Rute CRUD untuk Aset (untuk update harga manual)
+    // Kita mungkin hanya butuh index, edit, update
+    Route::resource('assets', AssetController::class);
 });
 
 // Admin Routes (hanya untuk admin)
@@ -80,6 +99,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Category Management
     Route::resource('categories', CategoryController::class);
 
+    // Machine Learning Monitoring
     Route::get('/monitoring', [MachineLearningMonitoringController::class, 'index'])->name('monitoring.index');
 });
 

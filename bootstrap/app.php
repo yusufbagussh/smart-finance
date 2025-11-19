@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
     })
+    ->withSchedule(function (Illuminate\Console\Scheduling\Schedule $schedule) { // <-- UBAH BARIS INI
+        $schedule->command('app:update-asset-prices')->dailyAt('13:00');
+    })
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

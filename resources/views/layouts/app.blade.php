@@ -100,12 +100,16 @@
                 </a>
 
                 {{-- AI Features --}}
-                <a href="{{ route('ml.index') }}"
+                {{-- <a href="{{ route('ml.index') }}"
                     class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
                     <i class="fas fa-brain text-xl mb-1"></i>
                     <span class="text-xs leading-none">AI</span>
+                </a> --}}
+                <a href="{{ route('portfolios.index') }}"
+                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
+                    <i class="fas fa-wallet text-xl mb-1"></i>
+                    <span class="text-xs leading-none">Invest</span> {{-- Ganti nama jadi 'Invest' agar singkat --}}
                 </a>
-
             </div>
         </div>
         <!-- Add bottom padding on mobile to prevent content being hidden by bottom nav -->
@@ -201,12 +205,17 @@
                     </a>
 
                     {{-- AI Features --}}
-                    <a href="{{ route('ml.index') }}"
+                    {{-- <a href="{{ route('ml.index') }}"
                         class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
                         <i class="fas fa-brain text-xl mb-1"></i>
                         <span class="text-xs leading-none">AI</span>
+                    </a> --}}
+                    {{-- AI Features diganti Portfolios --}}
+                    <a href="{{ route('portfolios.index') }}"
+                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
+                        <i class="fas fa-wallet text-xl mb-1"></i>
+                        <span class="text-xs leading-none">Invest</span>
                     </a>
-
                 </div>
             </div>
         @endif

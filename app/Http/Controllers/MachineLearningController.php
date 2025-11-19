@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Gemini\Laravel\Facades\Gemini;
 use Illuminate\Database\Eloquent\Casts\Json;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -42,13 +43,14 @@ class MachineLearningController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $currentMonth = now()->format('Y-m');
+        $currentMonth = "2025-10"; //now()->format('Y-m');
         $currentYear = now()->year;
         $currentMonthNum = now()->month;
 
         // --- 1. Classification Stats (Disederhanakan) ---
         $classificationStats = [
-            'total_transactions' => $user->transactions()->count(),
+            'total_transactions' => $user
+                ->transactions()->whereNull('investment_transaction_id')->count(),
             // Kita hapus mock accuracy, ganti dengan info model
             'model_info' => 'Model Naive Bayes dilatih pada data Anda.',
         ];
@@ -59,6 +61,7 @@ class MachineLearningController extends Controller
         // Ambil data pengeluaran harian (sama seperti di predictions())
         $dailySpending = $user->transactions()
             ->where('type', 'expense')
+            ->whereNull('investment_transaction_id')
             ->selectRaw('DATE(date) as date, SUM(amount) as amount')
             ->groupBy('date')
             ->orderBy('date', 'asc')
@@ -95,11 +98,13 @@ class MachineLearningController extends Controller
         $monthlyExpense = $user->transactions() // Ambil total expense bulan ini
             ->expense()
             ->whereYear('date', $currentYear)
+            ->whereNull('investment_transaction_id')
             ->whereMonth('date', $currentMonthNum)
             ->sum('amount');
         $monthlyIncome = $user->transactions() // Ambil total income bulan ini
             ->income()
             ->whereYear('date', $currentYear)
+            ->whereNull('investment_transaction_id')
             ->whereMonth('date', $currentMonthNum)
             ->sum('amount');
 
@@ -115,6 +120,7 @@ class MachineLearningController extends Controller
         $transactions = $user->transactions()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
+            ->whereNull('investment_transaction_id')
             ->with('category') // Eager load category
             ->get(['description', 'category_id', 'amount', 'type', 'date']);
 
@@ -247,6 +253,7 @@ class MachineLearningController extends Controller
 
         $dailySpending = auth()->user()->transactions()
             ->where('type', 'expense')
+            ->whereNull('investment_transaction_id')
             // 'DATE(date)' -> memastikan kita mengabaikan jam/menit/detik
             ->selectRaw('DATE(date) as date, SUM(amount) as amount')
             ->groupBy('date') // Ini adalah kunci efisiensinya
@@ -299,54 +306,109 @@ class MachineLearningController extends Controller
 
     public function recommendations()
     {
-        // 1. Tentukan bulan ini
-        $currentMonth = now()->format('Y-m');
-        $currentYear = now()->year;
-        $currentMonthNum = now()->month;
         $user = auth()->user();
+        $cacheKey = "recommendations_user_{$user->id}"; // <-- 2. Buat kunci unik
 
-        // Ambil Anggaran & Hitung Summary (Kita butuh summary untuk Gemini)
+        // 3. Cek cache. Jika ada, langsung kembalikan.
+        if (Cache::has($cacheKey)) {
+            // Ambil data dari cache
+            $cachedData = Cache::get($cacheKey);
+            if ($cachedData['geminiRecommendationText'] == "Maaf, ringkasan AI tidak dapat dimuat saat ini.") {
+                $this->clearPortfolioCache($user->id);
+            } else {
+                return view('ml.recommendations', [
+                    'geminiRecommendationText' => $cachedData['geminiRecommendationText'],
+                    'pythonInsights' => $cachedData['pythonInsights']
+                ]);
+            }
+        }
+
+        // 1. Tentukan bulan ini
+        // $currentMonth = now()->format('Y-m');
+        $currentMonth = '2025-10';
+        $currentYear = now()->year;
+        // $currentMonthNum = now()->month;
+        $currentMonthNum = 10;
+
+        // A. Pemasukan (Gaji, dll - BUKAN dari jual aset)
+        $monthlyEarnedIncome = $user->transactions()
+            ->income()
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNum)
+            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->sum('amount');
+
+        // B. Pengeluaran (Konsumtif - BUKAN untuk beli aset)
+        $monthlySpending = $user->transactions()
+            ->expense()
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNum)
+            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->sum('amount');
+
+        // C. Pembelian Investasi (Uang keluar untuk aset)
+        $monthlyInvestmentPurchase = $user->transactions()
+            ->expense()
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNum)
+            ->whereNotNull('investment_transaction_id') // <-- Kunci
+            ->sum('amount');
+
+        // D. Penjualan Investasi (Uang masuk dari aset)
+        $monthlyInvestmentSale = $user->transactions()
+            ->income()
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNum)
+            ->whereNotNull('investment_transaction_id') // <-- Kunci
+            ->sum('amount');
+
+        // Hitung "Cash Flow" bersih (Pemasukan - Pengeluaran Konsumtif)
+        $netCashFlow = $monthlyEarnedIncome - $monthlySpending;
+
+        // Ambil Anggaran & Hitung Summary
+        // $currentMonth = now()->format('Y-m');
+        $currentMonth = '2025-10';
         $currentMonthBudgets = $user->budgets()
             ->with('category')
             ->where('month', $currentMonth)
             ->get();
         $totalBudgetLimit = $currentMonthBudgets->sum('limit');
-        $monthlyExpense = $user->transactions() // Ambil total expense bulan ini
-            ->expense()
-            ->whereYear('date', $currentYear)
-            ->whereMonth('date', $currentMonthNum)
-            ->sum('amount');
-        $monthlyIncome = $user->transactions() // Ambil total income bulan ini
-            ->income()
-            ->whereYear('date', $currentYear)
-            ->whereMonth('date', $currentMonthNum)
-            ->sum('amount');
 
         $budgetSummary = null;
         if ($totalBudgetLimit > 0) {
-            $budgetProgress = ($monthlyExpense / $totalBudgetLimit) * 100;
-            $budgetRemaining = $totalBudgetLimit - $monthlyExpense;
-            $isOverBudget = $monthlyExpense > $totalBudgetLimit;
-            $budgetSummary = (object) ['limit' => $totalBudgetLimit, 'spent' => $monthlyExpense, 'remaining' => $budgetRemaining, 'progress' => $budgetProgress, 'isOverBudget' => $isOverBudget];
+            // --- PERUBAHAN 2: Gunakan $monthlySpending untuk budget ---
+            // Budget sekarang HANYA melacak pengeluaran konsumtif
+            $budgetProgress = ($monthlySpending / $totalBudgetLimit) * 100;
+            $budgetRemaining = $totalBudgetLimit - $monthlySpending;
+            $isOverBudget = $monthlySpending > $totalBudgetLimit;
+            $budgetSummary = (object) [
+                'limit' => $totalBudgetLimit,
+                'spent' => $monthlySpending, // <-- Diperbarui
+                'remaining' => $budgetRemaining,
+                'progress' => $budgetProgress,
+                'isOverBudget' => $isOverBudget
+            ];
         }
 
-        // Ambil Transaksi (untuk Python)
-        $transactions = $user->transactions()
+        // --- PERUBAHAN 3: Ambil Transaksi (HANYA KONSUMTIF) untuk Python ---
+        $consumptiveTransactions = $user->transactions()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->with('category') // Eager load category
+            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->with('category')
             ->get(['description', 'category_id', 'amount', 'type', 'date']);
 
-        // Payload untuk Python API
+        // Payload untuk Python API (Sekarang hanya berisi data konsumtif)
         $payload = [
-            'budgets' => $currentMonthBudgets->map(function ($b) { // Map data budget
+            'budgets' => $currentMonthBudgets->map(function ($b) {
+                // Asumsi $b->spent sudah di-load dengan benar oleh model Budget Anda
                 return [
                     'category' => $b->category->name ?? 'Uncategorized',
                     'budget' => $b->limit,
-                    'spent' => $b->spent // Asumsi spent sudah di-update
+                    'spent' => $b->spent
                 ];
             }),
-            'transactions' => $transactions->map(function ($t) { // Map data transaksi
+            'transactions' => $consumptiveTransactions->map(function ($t) { // <-- Diperbarui
                 return [
                     'description' => $t->description,
                     'category' => $t->category->name ?? 'Uncategorized',
@@ -356,6 +418,7 @@ class MachineLearningController extends Controller
                 ];
             })
         ];
+        // dd($payload);
 
         // 7. Panggil API Python /recommend
         $pythonInsights = []; // Default jika Python gagal
@@ -391,33 +454,41 @@ class MachineLearningController extends Controller
             // Buat Prompt yang Diperkaya
             $prompt = "Anda adalah asisten keuangan pribadi yang ramah dan memotivasi untuk aplikasi Smart Finance.\n\n";
             $prompt .= "Berikut ringkasan kondisi keuangan pengguna bulan ini:\n";
-            $prompt .= "- Total Pemasukan: Rp " . number_format($monthlyIncome, 0, ',', '.') . "\n";
-            $prompt .= "- Total Pengeluaran: Rp " . number_format($monthlyExpense, 0, ',', '.') . "\n";
+            $prompt .= "- Total Pemasukan (Gaji, dll): Rp " . number_format($monthlyEarnedIncome, 0, ',', '.') . "\n";
+            $prompt .= "- Total Pengeluaran (Konsumtif): Rp " . number_format($monthlySpending, 0, ',', '.') . "\n";
+            $prompt .= "- Arus Kas Bersih (Sisa Uang): Rp " . number_format($netCashFlow, 0, ',', '.') . "\n";
+
+            $prompt .= "\nSebagai tambahan, pengguna melakukan aktivitas investasi:\n";
+            $prompt .= "- Total Pembelian Aset (Investasi): Rp " . number_format($monthlyInvestmentPurchase, 0, ',', '.') . "\n";
+            $prompt .= "- Total Penjualan Aset (Hasil Investasi): Rp " . number_format($monthlyInvestmentSale, 0, ',', '.') . "\n";
+
             if ($budgetSummary) {
+                $prompt .= "\nStatus Anggaran (hanya melacak pengeluaran konsumtif):\n";
                 $prompt .= "- Total Anggaran: Rp " . number_format($budgetSummary->limit, 0, ',', '.') . "\n";
-                $prompt .= "- Status Anggaran: " . ($budgetSummary->isOverBudget ? "Melebihi batas!" : number_format($budgetSummary->progress, 1) . "% terpakai") . "\n";
+                $prompt .= "- Status: " . ($budgetSummary->isOverBudget ? "Melebihi batas!" : number_format($budgetSummary->progress, 1) . "% terpakai") . "\n";
             } else {
-                $prompt .= "- Status Anggaran: (Belum diatur)\n";
+                $prompt .= "\n- Status Anggaran: (Belum diatur)\n";
             }
-            $prompt .= "\nAnalisis AI detail menemukan wawasan berikut:\n";
+
+            $prompt .= "\nAnalisis AI (hanya dari data konsumtif) menemukan wawasan berikut:\n";
             if (!empty($pythonInsights)) {
                 foreach ($pythonInsights as $insight) {
-                    // Hanya sertakan pesan, tipe bisa disimpulkan Gemini
                     $prompt .= "- " . $insight['message'] . "\n";
                 }
             } else {
                 $prompt .= "- Tidak ada temuan spesifik yang perlu perhatian khusus bulan ini.\n";
             }
+
             $prompt .= "\n\nTugas Anda:\n";
-            $prompt .= "1. Berikan ringkasan singkat (1-2 kalimat) tentang kondisi keuangan pengguna secara keseluruhan bulan ini berdasarkan data ringkasan.\n";
-            $prompt .= "2. Pilih 1-2 wawasan *paling penting* dari analisis AI detail (jika ada) dan jelaskan dengan bahasa yang memotivasi dan actionable.\n";
-            $prompt .= "3. Berikan SATU tips keuangan umum tambahan yang relevan dengan kondisi atau wawasan pengguna.\n";
-            $prompt .= "4. Jaga agar total respons tetap ringkas (maksimal 4-5 kalimat).\n";
+            $prompt .= "1. Berikan ringkasan singkat (1-2 kalimat) tentang kondisi *cash flow* pengguna (Pemasukan vs Pengeluaran Konsumtif).\n";
+            $prompt .= "2. Berikan komentar singkat tentang aktivitas *investasi* mereka. Apresiasi jika mereka berinvestasi.\n";
+            $prompt .= "3. Pilih 1-2 wawasan *paling penting* dari analisis AI dan jelaskan dengan bahasa yang memotivasi.\n";
+            $prompt .= "4. Jaga agar total respons tetap ringkas (maksimal 5-6 kalimat).\n";
             $prompt .= "5. Format sebagai teks biasa (plain text).\n";
             $prompt .= "Respons Anda:";
-
+            // dd($prompt);
             try {
-                $responseGemini = Gemini::generativeModel(model: 'gemini-2.5-pro')->generateContent($prompt); // Sesuaikan model jika perlu (geminiPro(), etc.)                dd($responseGemini->json());
+                $responseGemini = Gemini::generativeModel(model: 'gemini-2.0-flash')->generateContent($prompt); // Sesuaikan model jika perlu (geminiPro(), etc.)                dd($responseGemini->json());
                 $this->storeMetric('recommend_gemini_latency', round((microtime(true) - $geminiStartTime) * 1000)); // Simpan durasi
                 if ($responseGemini->text()) {
                     $geminiRecommendationText = $responseGemini->text();
@@ -438,12 +509,26 @@ class MachineLearningController extends Controller
             Log::warning('GEMINI_API_KEY not set. Skipping Gemini call.');
             $geminiRecommendationText = "Ringkasan AI dinonaktifkan. Silakan periksa wawasan detail di bawah.";
         }
+        // dd($geminiRecommendationText);
+        Cache::put($cacheKey, [
+            'geminiRecommendationText' => $geminiRecommendationText,
+            'pythonInsights' => $pythonInsights
+        ], now()->addHours(6)); // Simpan selama 6 jam
+
         // --- !! AKHIR LANGKAH GEMINI !! ---
         // 8. Kirim Teks Final dari Gemini ke View
         return view('ml.recommendations', [
             'geminiRecommendationText' => $geminiRecommendationText, // Teks dari Gemini
             'pythonInsights' => $pythonInsights                   // Array wawasan dari Python
         ]);
+    }
+
+    private function clearPortfolioCache($user_id)
+    {
+        if (Auth::check()) {
+            $cacheKey = "recommendations_user_$user_id";
+            Cache::forget($cacheKey);
+        }
     }
 
     private function getMockPredictions()
