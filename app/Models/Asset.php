@@ -14,6 +14,7 @@ class Asset extends Model
     // Tambahkan 'current_price' ke casts
     protected $casts = [
         'current_price' => 'decimal:2',
+        'price_last_updated_at' => 'datetime',
     ];
 
     /**

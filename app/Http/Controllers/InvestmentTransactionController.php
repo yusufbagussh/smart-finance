@@ -93,11 +93,11 @@ class InvestmentTransactionController extends Controller
 
         if ($type === 'buy') {
             $description = "Beli Aset: " . $asset->name;
-            $categoryName = "Investasi"; // Nama Kategori Expense
+            $categoryName = "Investments"; // Nama Kategori Expense
             $transactionType = "expense";
         } else { // 'sell'
             $description = "Jual Aset: " . $asset->name;
-            $categoryName = "Return Investasi"; // Nama Kategori Income
+            $categoryName = "Investment Incomes"; // Nama Kategori Income
             $transactionType = "income";
         }
 
@@ -229,11 +229,11 @@ class InvestmentTransactionController extends Controller
 
         if ($type === 'buy') {
             $description = "Beli Aset: " . $asset->name;
-            $categoryName = "Investasi";
+            $categoryName = "Investments";
             $transactionType = "expense";
         } else { // 'sell'
             $description = "Jual Aset: " . $asset->name;
-            $categoryName = "Hasil Investasi";
+            $categoryName = "Investment Incomes";
             $transactionType = "income";
         }
 

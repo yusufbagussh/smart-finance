@@ -11,11 +11,42 @@ class AssetController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Sebaiknya urutkan, misal berdasarkan nama
-        $assets = Asset::orderBy('name')->get();
-        return view('assets.index', compact('assets'));
+        // Query langsung dari tabel Asset (data global)
+        $query = Asset::query();
+
+        // 1. Filter Tipe Aset (asset_type)
+        if ($request->filled('type')) {
+            $query->where('asset_type', $request->type);
+        }
+
+        // 2. Filter Satuan (price_unit)
+        if ($request->filled('unit')) {
+            $query->where('price_unit', $request->unit);
+        }
+
+        // 3. Logika Pencarian (Search)
+        if ($request->filled('search')) {
+            $searchTerm = strtolower($request->search);
+
+            $query->where(function ($q) use ($searchTerm) {
+                // Pencarian case-insensitive di 'name' ATAU 'code'
+                $q->whereRaw('LOWER(name) LIKE ?', ["%{$searchTerm}%"])
+                    ->orWhereRaw('LOWER(code) LIKE ?', ["%{$searchTerm}%"]);
+            });
+        }
+
+        // 4. Terapkan Pengurutan dan Paginasi
+        $assets = $query->orderBy('asset_type', 'asc')
+            ->orderBy('name', 'asc')
+            ->paginate(15);
+
+        // 5. Ambil daftar unik untuk dropdown (Opsional, tapi bagus)
+        $assetTypes = Asset::distinct()->pluck('asset_type');
+        $priceUnits = Asset::distinct()->pluck('price_unit');
+
+        return view('assets.index', compact('assets', 'assetTypes', 'priceUnits'));
     }
 
     /**

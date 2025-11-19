@@ -40,7 +40,8 @@ class TransactionController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->where('description', 'LIKE', '%' . $request->search . '%');
+            $searchTerm = strtolower($request->search);
+            $query->whereRaw('LOWER(description) LIKE ?', ["%{$searchTerm}%"]);
         }
 
         $transactions = $query->orderBy('date', 'desc')
