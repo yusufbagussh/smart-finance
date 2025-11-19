@@ -16,7 +16,7 @@ class AssetSeeder extends Seeder
      */
     public function run(): void
     {
-        $filePath = 'database/files/assets.xlsx';
+        $filePath = 'database/files/fix_assets.xlsx';
         $this->command->info("📂 Membaca file Excel dari: {$filePath}");
 
         /** @var Collection $collection */ // <-- 2. FIX UNTUK (Ln 22)
