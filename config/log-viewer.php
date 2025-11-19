@@ -99,7 +99,7 @@ return [
         'web',
         'auth',
         'admin',
-        \Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer::class,
+        // \Opcodes\LogViewer\Http\Middleware\AuthorizeLogViewer::class,
     ],
 
     /*
