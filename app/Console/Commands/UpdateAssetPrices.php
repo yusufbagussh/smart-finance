@@ -58,12 +58,10 @@ class UpdateAssetPrices extends Command
             $response = Http::timeout(30)->get($apiUrl);
 
             // Cek jika panggilan sukses DAN ada data 'gold_price'
-            if ($response->successful() && $response->json('gold_price')) {
-
-                // --- INI ADALAH LOGIKA YANG DIPERBARUI ---
-
-                $price = $response->json('gold_price');
-                $updateString = $response->json('last_updated_at'); // Ambil string "17 Nov 2025, 19.34 WIB"
+            if ($response->successful() && $response->json('prices')) {
+                // --- INI ADALAH LOGIKA YANG DIPERBARUI ---         
+                $prices = $response->json('prices'); // Array ['antam' => ..., 'pegadaian' => ...]
+                $updateString = $response->json('last_updated_at');
 
                 $updateTimestamp = null;
 
@@ -85,17 +83,29 @@ class UpdateAssetPrices extends Command
                 }
 
                 // 4. Update database dengan harga DAN timestamp
-                Asset::where('asset_type', 'gold')
-                    ->update([
-                        'current_price' => $price,
-                        'price_last_updated_at' => $updateTimestamp // <-- Simpan tanggal
-                    ]);
+                // --- UPDATE 1: EMAS ANTAM ---
+                if (isset($prices['antam']) && $prices['antam'] > 0) {
+                    Asset::where('code', 'ANTM01') // Pastikan kode di DB adalah 'ANTM'
+                        ->update([
+                            'current_price' => $prices['antam'],
+                            'price_last_updated_at' => $updateTimestamp
+                        ]);
+                    $this->line("    - ANTM diperbarui: Rp " . number_format($prices['antam']));
+                }
 
-                $this->info(" -> Sukses: Harga Emas diperbarui ke Rp " . number_format($price) . " (per tgl: " . $updateString . ")");
-                Log::info("Cron Job: Sukses update harga Emas ke Rp {$price} (per tgl: {$updateString}).");
+                // --- UPDATE 2: EMAS PEGADAIAN ---
+                if (isset($prices['pegadaian']) && $prices['pegadaian'] > 0) {
+                    Asset::where('code', 'PGDN01') // Pastikan kode di DB adalah 'PEGADAIAN'
+                        ->update([
+                            'current_price' => $prices['pegadaian'],
+                            'price_last_updated_at' => $updateTimestamp
+                        ]);
+                    $this->line("    - PEGADAIAN diperbarui: Rp " . number_format($prices['pegadaian']));
+                }
 
+                $this->info("Cron Job: Sukses update harga Emas Antam & Pegadaian. (per tgl: {$updateString}).");
+                Log::info("Cron Job: Sukses update harga Emas Antam & Pegadaian. (per tgl: {$updateString}).");
                 // --- AKHIR LOGIKA YANG DIPERBARUI ---
-
             } else {
                 $this->error(' -> Gagal: API Python Emas mengembalikan data tidak valid.');
                 Log::error('Cron Job: Gagal update harga Emas.', ['response' => $response->body()]);
