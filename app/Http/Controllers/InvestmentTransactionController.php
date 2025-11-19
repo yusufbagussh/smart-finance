@@ -91,20 +91,25 @@ class InvestmentTransactionController extends Controller
         $categoryName = "";
         $transactionType = "";
 
+        // 1. Kategori Pembelian/Modal (Investment / Expense)
         if ($type === 'buy') {
-            $description = "Beli Aset: " . $asset->name;
-            $categoryName = "Investments"; // Nama Kategori Expense
+            $categoryName = "Investments";
             $transactionType = "expense";
+            $icon = '📈'; // <-- IKON BARU
+            $color = '#2563EB'; // Warna biru tua
+
+            // 2. Kategori Keuntungan/Hasil (Investment Income / Income)
         } else { // 'sell'
-            $description = "Jual Aset: " . $asset->name;
-            $categoryName = "Investment Incomes"; // Nama Kategori Income
+            $categoryName = "Investment Income";
             $transactionType = "income";
+            $icon = '💸'; // <-- IKON BARU
+            $color = '#10B981'; // Warna hijau
         }
 
-        // Cari Kategori, atau buat jika tidak ada (untuk keamanan)
+        // Kemudian simpan ke database:
         $category = Category::firstOrCreate(
-            ['name' => $categoryName, 'type' => $transactionType],
-            ['icon' => "📉", 'color' => '#3B82F6'] // Default jika dibuat
+            ['user_id' => $user->id, 'name' => $categoryName, 'type' => $transactionType],
+            ['icon' => $icon, 'color' => $color] // <-- Gunakan ikon dan warna yang baru
         );
 
         // Buat Transaksi Utama
@@ -227,19 +232,25 @@ class InvestmentTransactionController extends Controller
         $categoryName = "";
         $transactionType = "";
 
+        // 1. Kategori Pembelian/Modal (Investment / Expense)
         if ($type === 'buy') {
-            $description = "Beli Aset: " . $asset->name;
             $categoryName = "Investments";
             $transactionType = "expense";
+            $icon = '📈'; // <-- IKON BARU
+            $color = '#2563EB'; // Warna biru tua
+
+            // 2. Kategori Keuntungan/Hasil (Investment Income / Income)
         } else { // 'sell'
-            $description = "Jual Aset: " . $asset->name;
-            $categoryName = "Investment Incomes";
+            $categoryName = "Investment Income";
             $transactionType = "income";
+            $icon = '💸'; // <-- IKON BARU
+            $color = '#10B981'; // Warna hijau
         }
 
+        // Kemudian simpan ke database:
         $category = Category::firstOrCreate(
-            ['name' => $categoryName, 'type' => $transactionType],
-            ['icon' => "📉", 'color' => '#3B82F6']
+            ['user_id' => $user->id, 'name' => $categoryName, 'type' => $transactionType],
+            ['icon' => $icon, 'color' => $color] // <-- Gunakan ikon dan warna yang baru
         );
 
         // 2. Cari Transaksi Utama yang terkait
