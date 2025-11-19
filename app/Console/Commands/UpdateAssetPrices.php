@@ -40,7 +40,7 @@ class UpdateAssetPrices extends Command
 
         // Menjalankan setiap tugas secara berurutan
         $this->updateGoldPrices();
-        $this->updateYFinanceAssets();
+        // $this->updateYFinanceAssets();
 
         $this->info('Update harga aset selesai.');
         return 0;
@@ -67,19 +67,26 @@ class UpdateAssetPrices extends Command
 
                 if ($updateString) {
                     try {
-                        // 2. Gunakan Carbon untuk mem-parsing string tanggal
-                        // 'id_ID' -> agar mengerti "Nov" (November)
-                        // 'Asia/Jakarta' -> agar mengerti "WIB"
-                        $updateTimestamp = Carbon::parseLocale('id_ID', $updateString, 'Asia/Jakarta')
-                            ->tz('UTC'); // 3. Konversi ke UTC untuk disimpan di DB
+                        // Tentukan format string yang diharapkan
+                        // d M Y, H.i T -> (Hari, BulanSingkat, Tahun, Jam.Menit WIB)
+                        $format = 'd M Y, H.i T';
 
+                        // FIX: Gunakan createFromFormat (paling robust)
+                        $updateTimestamp = Carbon::createFromFormat($format, $updateString, 'Asia/Jakarta'); // Konversi ke UTC untuk DB
+
+                        Log::info("Cron Job: Parsed date string '{$updateString}' to timestamp '{$updateTimestamp}'.");
+
+                        // Cek apakah ada kesalahan parsing, kembalikan ke Exception jika gagal
+                        if (!$updateTimestamp) {
+                            throw new \Exception("Carbon failed to recognize the date format.");
+                        }
                     } catch (\Exception $parseError) {
                         Log::warning("Cron Job: Gagal mem-parsing tanggal Emas: " . $updateString . ". Error: " . $parseError->getMessage());
                         $updateTimestamp = now(); // Fallback jika parsing gagal
                     }
                 } else {
-                    Log::warning("Cron Job: API Emas tidak mengembalikan 'last_updated_at'.");
-                    $updateTimestamp = now(); // Fallback jika API tidak mengembalikan tanggal
+                    Log::warning("Cron Job: API Emas tidak mengembalikan last_updated_at.");
+                    $updateTimestamp = now(); // Fallback
                 }
 
                 // 4. Update database dengan harga DAN timestamp
