@@ -12,8 +12,17 @@ class Liability extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'name', 'description', 'original_amount', 'current_balance',
-        'creditor_name', 'start_date', 'due_date', 'tenor_months', 'interest_rate',
+        'user_id',
+        'name',
+        'description',
+        'original_amount',
+        'current_balance',
+        'creditor_name',
+        'start_date',
+        'due_date',
+        'tenor_months',
+        'interest_rate',
+        'type',
     ];
 
     protected $casts = [
@@ -23,6 +32,17 @@ class Liability extends Model
         'start_date' => 'date',
         'due_date' => 'date',
     ];
+
+    // Helper untuk cek tipe
+    public function isPayable()
+    {
+        return $this->type === 'payable';
+    }
+
+    public function isReceivable()
+    {
+        return $this->type === 'receivable';
+    }
 
     public function user(): BelongsTo
     {

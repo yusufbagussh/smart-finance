@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Liability;
 use App\Models\Account; // Untuk dropdown
+use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -12,6 +13,9 @@ use Illuminate\Validation\Rule;
 
 class LiabilityController extends Controller
 {
+
+    public function __construct(private TransactionService $transactionService) {}
+
     // Menampilkan daftar hutang yang aktif
     public function index(Request $request)
     {
@@ -44,12 +48,13 @@ class LiabilityController extends Controller
 
         // Apply Ordering and Pagination
         $liabilities = $query->orderBy('current_balance', 'desc')->paginate(15);
-        $totalLiabilities = $liabilities->sum('current_balance');
+        $totalReceivables = $liabilities->where('type', 'receivable')->sum('current_balance');
+        $totalLiabilities = $liabilities->where('type', 'payable')->sum('current_balance');
 
         // Ambil daftar unik creditor untuk dropdown
         $creditors = $user->liabilities()->distinct()->pluck('creditor_name');
 
-        return view('liabilities.index', compact('liabilities', 'totalLiabilities', 'creditors'));
+        return view('liabilities.index', compact('liabilities', 'totalLiabilities', 'totalReceivables', 'creditors'));
     }
 
     // Menampilkan form tambah hutang
@@ -74,7 +79,8 @@ class LiabilityController extends Controller
             'interest_rate' => 'nullable|numeric|min:0',
             'start_date' => 'required|date|before_or_equal:today',
             'due_date' => 'nullable|date|after_or_equal:start_date',
-            'received_account_id' => ['required', Rule::exists('accounts', 'id')->where('user_id', Auth::id())], // Akun penerima dana
+            'account_id' => ['required', Rule::exists('accounts', 'id')->where('user_id', Auth::id())], // Akun penerima dana
+            'type' => 'required|in:payable,receivable',
         ]);
 
         $user = Auth::user();
@@ -91,22 +97,36 @@ class LiabilityController extends Controller
                 'due_date' => $validated['due_date'] ?? null,
                 'tenor_months' => $validated['tenor_months'],
                 'interest_rate' => $validated['interest_rate'] ?? 0,
+                'type' => $validated['type'],
             ]);
 
-            // 2. Buat Transaksi INFLOW (Pemasukan)
-            // Uang pinjaman masuk ke akun yang dipilih user
-            $user->transactions()->create([
-                'type' => 'income',
-                'amount' => $validated['original_amount'],
-                'description' => 'Pinjaman diterima dari ' . $validated['creditor_name'],
-                'date' => $validated['start_date'],
-                'destination_account_id' => $validated['received_account_id'],
-                'liability_id' => $liability->id, // <-- PENTING: Kaitkan ke liabilitas
-                'category_id' => null, // Kategori bisa diset 'null' atau kategori khusus 'Pinjaman'
-            ]);
+            // 2. Buat Transaksi Awal (Logika Bercabang)
+            if ($validated['type'] === 'payable') {
+                // KITA BERHUTANG -> Uang Masuk (Income)
+                $transaction = $user->transactions()->create([
+                    'type' => 'income',
+                    'amount' => $validated['original_amount'],
+                    'description' => 'Terima Pinjaman: ' . $validated['name'],
+                    'date' => $validated['start_date'],
+                    'destination_account_id' => $validated['account_id'], // Masuk ke akun kita
+                    'liability_id' => $liability->id,
+                ]);
+            } else {
+                // KITA KASIH HUTANG -> Uang Keluar (Expense)
+                $transaction = $user->transactions()->create([
+                    'type' => 'expense',
+                    'amount' => $validated['original_amount'],
+                    'description' => 'Beri Pinjaman: ' . $validated['name'],
+                    'date' => $validated['start_date'],
+                    'source_account_id' => $validated['account_id'], // Keluar dari akun kita
+                    'liability_id' => $liability->id,
+                ]);
+            }
 
             // Note: Saldo Account akan otomatis di-update oleh TransactionController logic (adjustAccountBalances)
-
+            if ($transaction) {
+                $this->transactionService->handleAccountBalance($transaction);
+            }
             DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
@@ -187,7 +207,8 @@ class LiabilityController extends Controller
 
             foreach ($transactions as $transaction) {
                 // Kita lakukan REVERT (Pembalikan) saldo untuk setiap transaksi
-                $this->revertTransactionBalance($transaction);
+                // $this->revertTransactionBalance($transaction);
+                $this->transactionService->handleAccountBalance($transaction, true);
 
                 // Hapus transaksinya
                 $transaction->delete();

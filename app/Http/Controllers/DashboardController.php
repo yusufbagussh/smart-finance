@@ -45,13 +45,22 @@ class DashboardController extends Controller
         $totalExpense = $user->totalExpense();
 
         //HITUNG TOTAL LIABILITAS (Hutang)
-        $totalLiabilities = Auth::user()->liabilities()->sum('current_balance');
+        // 1. Ambil Total Hutang (Kewajiban)
+        $totalPayables = Auth::user()->liabilities()
+            ->where('type', 'payable')
+            ->sum('current_balance');
+
+        // 2. Ambil Total Piutang (Aset)
+        $totalReceivables = Auth::user()->liabilities()
+            ->where('type', 'receivable')
+            ->sum('current_balance');
 
         // Saldo ini sekarang adalah Saldo KAS (Cash Balance)
         $currentBalance = $totalIncome - $totalExpense;
 
         // Ini adalah Total Kekayaan Bersih Anda
-        $totalNetWorth = $currentBalance + $totalInvestmentValue - $totalLiabilities;
+        // Cash + Investasi + Piutang (Uang kita di orang) - Hutang (Uang orang di kita)
+        $totalNetWorth = $currentBalance + $totalInvestmentValue + $totalReceivables - $totalPayables;
 
 
         // Hitung income & expense bulanan (KONSUMTIF)s
@@ -229,7 +238,9 @@ class DashboardController extends Controller
             'chartTitle',
             'filter', // Filter aktif (daily/monthly)
             'dateFrom', // Tanggal mulai input (jika ada)
-            'dateTo'    // Tanggal akhir input (jika ada)
+            'dateTo',    // Tanggal akhir input (jika ada)
+            'totalPayables',
+            'totalReceivables',
         ));
     }
 
