@@ -44,11 +44,14 @@ class DashboardController extends Controller
         $totalIncome = $user->totalIncome();
         $totalExpense = $user->totalExpense();
 
+        //HITUNG TOTAL LIABILITAS (Hutang)
+        $totalLiabilities = Auth::user()->liabilities()->sum('current_balance');
+
         // Saldo ini sekarang adalah Saldo KAS (Cash Balance)
         $currentBalance = $totalIncome - $totalExpense;
 
         // Ini adalah Total Kekayaan Bersih Anda
-        $totalNetWorth = $currentBalance + $totalInvestmentValue;
+        $totalNetWorth = $currentBalance + $totalInvestmentValue - $totalLiabilities;
 
 
         // Hitung income & expense bulanan (KONSUMTIF)s

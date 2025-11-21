@@ -95,6 +95,21 @@
                             @error('source_account_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
                         </div>
 
+                        <div class="mb-6" x-show="type === 'expense'" x-transition>
+                            <label for="liability_id" class="block text-sm font-medium text-gray-700 mb-2">Link to Debt (Optional)</label>
+                            <select name="liability_id" id="liability_id"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">-- Not a repayment --</option>
+                                @foreach($liabilities as $liability)
+                                    <option value="{{ $liability->id }}" {{ old('liability_id') == $liability->id ? 'selected' : '' }}>
+                                        {{ $liability->name }} (Balance: Rp {{ number_format($liability->current_balance, 0, ',', '.') }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('liability_id') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                        {{-- Dropdown 'To Account' (destination_account_id) dipindahkan ke bawah sini --}}
+
                         <div class="mb-6" x-show="type === 'income' || type === 'transfer'" x-transition>
                             <label for="destination_account_id" class="block text-sm font-medium text-gray-700 mb-2">To Account</label>
                             <select name="destination_account_id" id="destination_account_id" :required="type === 'income' || type === 'transfer'"

@@ -27,7 +27,7 @@
                     </x-nav-link>
                     <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                         <i class="fas fa-brain mr-2"></i>
-                        {{ __('AI Features') }}
+                        {{ __('AI') }}
                     </x-nav-link>
                 </div>
             </div>
@@ -103,7 +103,7 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                 <i class="fas fa-brain mr-2"></i>
-                {{ __('AI Features') }}
+                {{ __('AI') }}
             </x-responsive-nav-link>
         </div>
 
@@ -199,6 +199,12 @@
                                 {{ __('Transactions') }}
                             </x-nav-link>
 
+                            {{-- !! TAMBAHAN MENU LIABILITIES !! --}}
+                            <x-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
+                                <i class="fas fa-file-invoice-dollar mr-2"></i>
+                                {{ __('Liabilities') }}
+                            </x-nav-link>
+
                             {{-- !! TAMBAHAN 1 (Desktop Admin) !! --}}
                             <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
                                 request()->routeIs('investment-transactions.*')">
@@ -213,7 +219,7 @@
 
                             <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                                 <i class="fas fa-brain mr-2"></i>
-                                {{ __('AI Features') }}
+                                {{ __('AI') }}
                             </x-nav-link>
                             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                                 <i class="fas fa-file-download mr-2"></i>
@@ -238,6 +244,12 @@
                             {{ __('Transactions') }}
                         </x-nav-link>
 
+                        {{-- !! TAMBAHAN MENU LIABILITIES !! --}}
+                        <x-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
+                            <i class="fas fa-file-invoice-dollar mr-2"></i>
+                            {{ __('Liabilities') }}
+                        </x-nav-link>
+
                         {{-- !! TAMBAHAN 1 (Desktop User) !! --}}
                         <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
                             request()->routeIs('investment-transactions.*')">
@@ -252,7 +264,7 @@
 
                         <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                             <i class="fas fa-brain mr-2"></i>
-                            {{ __('AI Features') }}
+                            {{ __('AI') }}
                         </x-nav-link>
                     @endif
                 </div>
@@ -388,6 +400,11 @@
                         {{ __('Transactions') }}
                     </x-responsive-nav-link>
 
+                    {{-- !! TAMBAHAN MENU LIABILITIES (MOBILE) !! --}}
+                    <x-responsive-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
+                        <i class="fas fa-file-invoice-dollar mr-2"></i> {{ __('Liabilities') }}
+                    </x-responsive-nav-link>
+
                     {{-- !! TAMBAHAN 1 (Mobile Admin) !! --}}
                     <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
                         <i class="fas fa-wallet mr-2"></i>
@@ -401,7 +418,7 @@
 
                     <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                         <i class="fas fa-brain mr-2"></i>
-                        {{ __('AI Features') }}
+                        {{ __('AI') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                         <i class="fas fa-file-download mr-2"></i>
@@ -429,6 +446,11 @@
                     {{ __('Transactions') }}
                 </x-responsive-nav-link>
 
+                {{-- !! TAMBAHAN MENU LIABILITIES (MOBILE) !! --}}
+                <x-responsive-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i> {{ __('Liabilities') }}
+                </x-responsive-nav-link>
+
                 {{-- !! TAMBAHAN 1 (Mobile User) !! --}}
                 <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
                     <i class="fas fa-wallet mr-2"></i>
@@ -442,7 +464,7 @@
 
                 <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                     <i class="fas fa-brain mr-2"></i>
-                    {{ __('AI Features') }}
+                    {{ __('AI') }}
                 </x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
                     <i class="fas fa-file-download mr-2"></i>

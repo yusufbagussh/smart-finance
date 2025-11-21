@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\MachineLearningMonitoringController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\InvestmentTransactionController;
+use App\Http\Controllers\LiabilityController;
 use App\Http\Controllers\MachineLearningController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
@@ -73,6 +74,8 @@ Route::middleware('auth')->group(function () {
 
     // Account Management
     Route::resource('accounts', AccountController::class);
+
+    Route::resource('liabilities', LiabilityController::class);
 
     // Rute untuk Transaksi (dari langkah sebelumnya)
     Route::resource('investment-transactions', InvestmentTransactionController::class)->except(['index', 'show']);
