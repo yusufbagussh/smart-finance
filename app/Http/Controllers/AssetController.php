@@ -70,7 +70,7 @@ class AssetController extends Controller
             'issuer' => 'nullable|string|max:255',
             'asset_type' => [
                 'required',
-                Rule::in(['mutual_fund', 'gold']), // Validasi dari Enum
+                Rule::in(['mutual_fund', 'gold', 'etf', 'stock']), // Validasi dari Enum
             ],
             'price_unit' => [
                 'required',

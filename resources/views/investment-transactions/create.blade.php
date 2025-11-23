@@ -156,7 +156,10 @@
                                     @foreach ($assets as $asset)
                                         <option value="{{ $asset->id }}"
                                             {{ old('asset_id') == $asset->id ? 'selected' : '' }}>
-                                            {{ $asset->name }} ({{ $asset->code }})
+                                            {{ $asset->name }} ({{ $asset->code }}
+                                            - Rp{{ number_format($asset->current_price, 2, ',', '.') }}
+                                            -
+                                            {{ $asset->price_last_updated_at ? $asset->price_last_updated_at->format('M d, H:i') : 'N/A' }})
                                         </option>
                                     @endforeach
                                 </select>
