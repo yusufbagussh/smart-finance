@@ -40,7 +40,7 @@ class UpdateAssetPrices extends Command
 
         // Menjalankan setiap tugas secara berurutan
         $this->updateGoldPrices();
-        // $this->updateYFinanceAssets();
+        $this->updateYFinanceAssets();
 
         $this->info('Update harga aset selesai.');
         return 0;
