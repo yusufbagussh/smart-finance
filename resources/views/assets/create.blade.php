@@ -37,6 +37,12 @@
                                     <option value="gold" {{ old('asset_type') == 'gold' ? 'selected' : '' }}>
                                         Gold (Emas)
                                     </option>
+                                    <option value="etf" {{ old('asset_type') == 'etf' ? 'selected' : '' }}>
+                                        ETF (Exchange-Traded Fund)
+                                    </option>
+                                    <option value="stock" {{ old('asset_type') == 'stock' ? 'selected' : '' }}>
+                                        Stock (Saham)
+                                    </option>
                                 </select>
                                 @error('asset_type')
                                     <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
