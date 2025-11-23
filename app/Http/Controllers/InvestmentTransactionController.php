@@ -10,11 +10,14 @@ use App\Http\Requests\StoreInvestmentTransactionRequest; // Akan kita buat
 use App\Models\Category;
 use App\Models\Portfolio;
 use App\Models\Transaction;
+use App\Services\TransactionService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+
 class InvestmentTransactionController extends Controller
 {
+    public function __construct(protected TransactionService $transactionService) {}
     /**
      * Menampilkan form untuk membuat transaksi baru.
      */
@@ -23,6 +26,9 @@ class InvestmentTransactionController extends Controller
         // Ambil data untuk dropdown di form
         $portfolios = Auth::user()->portfolios;
         $assets = Asset::orderBy('name')->get(); // Ambil semua aset
+
+        // 3. Ambil daftar akun untuk dropdown
+        $accounts = Auth::user()->accounts()->orderBy('name')->get();
 
         // Jika user tidak punya portofolio, redirect
         if ($portfolios->isEmpty()) {
@@ -36,7 +42,7 @@ class InvestmentTransactionController extends Controller
                 ->with('warning', 'Anda harus menambahkan data aset terlebih dahulu.');
         }
 
-        return view('investment-transactions.create', compact('portfolios', 'assets'));
+        return view('investment-transactions.create', compact('portfolios', 'assets', 'accounts'));
     }
 
     /**
@@ -70,8 +76,13 @@ class InvestmentTransactionController extends Controller
                 'total_amount' => $total_amount,
             ]);
 
+            // Kita kirim juga ID akun yang dipilih user
+            $accountId = ($validatedData['transaction_type'] === 'buy')
+                ? $validatedData['source_account_id']
+                : $validatedData['destination_account_id'];
+
             // 4. LOGIKA BARU: BUAT TRANSAKSI DI RIWAYAT UTAMA
-            $this->createMainTransaction($investmentTransaction, $asset, $validatedData['transaction_type'], $total_amount);
+            $this->createMainTransaction($investmentTransaction, $asset, $validatedData['transaction_type'], $total_amount, $accountId);
         });
 
         $this->clearPortfolioCache($portfolio->id);
@@ -84,69 +95,99 @@ class InvestmentTransactionController extends Controller
     /**
      * Helper function untuk membuat entri di tabel transactions (utama).
      */
-    private function createMainTransaction($investmentTx, $asset, $type, $totalAmount)
+    /**
+     * Helper: Buat transaksi utama dan update saldo.
+     */
+    private function createMainTransaction($investmentTx, $asset, $type, $totalAmount, $accountId)
     {
         $user = Auth::user();
         $description = "";
-        $categoryName = "";
         $transactionType = "";
+        $sourceAccountId = null;
+        $destinationAccountId = null;
 
-        // 1. Kategori Pembelian/Modal (Investment / Expense)
+        // Tentukan Tipe & Akun
         if ($type === 'buy') {
+            $description = "Asset Purchase: " . $asset->name;
+            $transactionType = "expense"; // Uang keluar
+            $sourceAccountId = $accountId; // Kurangi saldo ini
+            $icon = "📈";
+            $categoryColor = "#2563EB";
             $categoryName = "Investments";
-            $transactionType = "expense";
-            $icon = '📈'; // <-- IKON BARU
-            $color = '#2563EB'; // Warna biru tua
-
-            // 2. Kategori Keuntungan/Hasil (Investment Income / Income)
         } else { // 'sell'
+            $description = "Asset Sale Proceeds: " . $asset->name;
+            $transactionType = "income"; // Uang masuk
+            $destinationAccountId = $accountId; // Tambah saldo ini
+            $icon = "💸";
+            $categoryColor = "#10B981";
             $categoryName = "Investment Income";
-            $transactionType = "income";
-            $icon = '💸'; // <-- IKON BARU
-            $color = '#10B981'; // Warna hijau
         }
 
-        // Kemudian simpan ke database:
+        // Kategori Otomatis (Investments)
         $category = Category::firstOrCreate(
-            ['user_id' => $user->id, 'name' => $categoryName, 'type' => $transactionType],
-            ['icon' => $icon, 'color' => $color] // <-- Gunakan ikon dan warna yang baru
+            [
+                'name' => $categoryName,
+                'type' => $transactionType,
+                'icon' => $icon,
+                'color' => $categoryColor
+            ]
         );
 
-        // Buat Transaksi Utama
-        Transaction::create([
+        // 1. Buat Transaksi Utama
+        $mainTransaction = \App\Models\Transaction::create([
             'user_id' => $user->id,
             'category_id' => $category->category_id,
             'amount' => $totalAmount,
             'type' => $transactionType,
             'description' => $description,
             'date' => $investmentTx->transaction_date,
-            'investment_transaction_id' => $investmentTx->id
+            'investment_transaction_id' => $investmentTx->id,
+            'source_account_id' => $sourceAccountId,
+            'destination_account_id' => $destinationAccountId,
         ]);
-    }
 
+        // 2. PANGGIL SERVICE UNTUK UPDATE SALDO AKUN (DOMPET/BANK)
+        // Ini akan mengurangi saldo (jika buy) atau menambah saldo (jika sell)
+        $this->transactionService->handleAccountBalance($mainTransaction);
+    }
     public function destroy(InvestmentTransaction $investmentTransaction)
     {
-        // 1. Otorisasi: Pastikan transaksi ini milik user
+        // 1. Otorisasi
         $this->authorizeUser($investmentTransaction);
 
-        // 2. Gunakan DB Transaction untuk keamanan data
-        DB::transaction(function () use ($investmentTransaction) {
+        // Ambil transaksi utama (cash flow) yang terkait
+        $mainTransaction = $investmentTransaction->mainTransaction;
 
-            // 3. Hapus transaksi utama (cash flow) yang terkait
-            // Gunakan where() lalu delete() untuk keamanan
-            Transaction::where('investment_transaction_id', $investmentTransaction->id)->delete();
+        try {
+            // 2. Gunakan DB Transaction untuk keamanan data
+            DB::beginTransaction();
 
-            // 4. Hapus transaksi investasi itu sendiri
+            if ($mainTransaction) {
+                // 3. REVERT Saldo Akun (PENTING!)
+                // Mengembalikan saldo akun ke kondisi sebelum transaksi ini terjadi.
+                // Misal: Jika ini transaksi 'Beli', uang dikembalikan ke Akun Sumber.
+                $this->transactionService->handleAccountBalance($mainTransaction, true);
+
+                // 4. Hapus transaksi utama (cash flow) yang terkait
+                $mainTransaction->delete();
+            }
+
+            // 5. Hapus transaksi investasi itu sendiri
             $investmentTransaction->delete();
-        });
 
-        $this->clearPortfolioCache($investmentTransaction->portfolio_id);
+            // 6. Bersihkan cache
+            $this->clearPortfolioCache($investmentTransaction->portfolio_id);
 
-        // 5. Kembali ke halaman portofolio
-        return redirect()->route('portfolios.show', $investmentTransaction->portfolio_id)
-            ->with('success', 'Transaksi investasi berhasil dihapus.');
+            DB::commit();
+
+            // 7. Kembali ke halaman portofolio
+            return redirect()->route('portfolios.show', $investmentTransaction->portfolio_id)
+                ->with('success', 'Transaksi investasi berhasil dihapus.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal menghapus transaksi investasi.');
+        }
     }
-
     // Helper untuk otorisasi (DRY - Don't Repeat Yourself)
     private function authorizeUser(InvestmentTransaction $investmentTransaction)
     {
@@ -166,9 +207,22 @@ class InvestmentTransactionController extends Controller
         // 2. Ambil data untuk dropdown
         $portfolios = Auth::user()->portfolios;
         $assets = Asset::orderBy('name')->get();
+        $accounts = Auth::user()->accounts()->orderBy('name')->get();
+
+        // Jika user tidak punya portofolio, redirect
+        if ($portfolios->isEmpty()) {
+            return redirect()->route('portfolios.create')
+                ->with('warning', 'Anda harus membuat portofolio terlebih dahulu.');
+        }
+
+        // Jika tidak ada aset di sistem, redirect
+        if ($assets->isEmpty()) {
+            return redirect()->route('assets.create')
+                ->with('warning', 'Anda harus menambahkan data aset terlebih dahulu.');
+        }
 
         // 3. Tampilkan view
-        return view('investment-transactions.edit', compact('investmentTransaction', 'portfolios', 'assets'));
+        return view('investment-transactions.edit', compact('investmentTransaction', 'portfolios', 'assets', 'accounts'));
     }
 
     /**
@@ -197,8 +251,18 @@ class InvestmentTransactionController extends Controller
 
         // 5. Gunakan DB Transaction
         DB::transaction(function () use ($investmentTransaction, $validatedData, $asset, $total_amount, $fees) {
+            $mainTransaction = $investmentTransaction->mainTransaction; // Ambil transaksi utama
 
-            // 6. Update Transaksi Investasi
+            // 1. REVERT Saldo LAMA (Berdasarkan kondisi transaksi utama yang lama)
+            if ($mainTransaction) {
+                // Kita revert saldo akun (misal: uang 5jt dikembalikan ke akun BCA)
+                $this->transactionService->handleAccountBalance($mainTransaction, true);
+            }
+
+            // 2. Hitung ulang total amount (karena harga/qty/fee bisa berubah)
+            // $newTotalAmount = $validatedData['quantity'] * $validatedData['price_per_unit'] + ($validatedData['fees'] ?? 0);
+
+            // 3. Update Investment Transaction
             $investmentTransaction->update([
                 'portfolio_id' => $validatedData['portfolio_id'],
                 'asset_id' => $validatedData['asset_id'],
@@ -210,8 +274,18 @@ class InvestmentTransactionController extends Controller
                 'total_amount' => $total_amount,
             ]);
 
-            // 7. Update Transaksi Utama (Cash Flow)
-            $this->updateMainTransaction($investmentTransaction, $asset, $validatedData['transaction_type'], $total_amount);
+            // 4. Update Transaksi Utama (Cash Flow)
+            $this->updateMainTransaction(
+                $investmentTransaction->fresh(), // Gunakan fresh untuk memastikan data inv_tx terbaru
+                $asset,
+                $validatedData['transaction_type'],
+                $total_amount,
+                $validatedData['source_account_id'] ?? null,
+                $validatedData['destination_account_id'] ?? null
+            );
+
+            // 5. APPLY Saldo BARU (Berdasarkan transaksi utama yang baru)
+            $this->transactionService->handleAccountBalance($mainTransaction->fresh()); // Apply Akun
         });
 
         $this->clearPortfolioCache($investmentTransaction->portfolio_id);
@@ -224,39 +298,44 @@ class InvestmentTransactionController extends Controller
     /**
      * Helper function untuk MENGUBAH entri di tabel transactions (utama).
      */
-    private function updateMainTransaction($investmentTx, $asset, $type, $totalAmount)
+    private function updateMainTransaction($investmentTx, $asset, $type, $totalAmount, $sourceAccountId = null, $destinationAccountId = null)
     {
-        // 1. Logika deskripsi & kategori (copy dari createMainTransaction)
         $user = Auth::user();
         $description = "";
         $categoryName = "";
         $transactionType = "";
 
-        // 1. Kategori Pembelian/Modal (Investment / Expense)
-        if ($type === 'buy') {
-            $categoryName = "Investments";
-            $transactionType = "expense";
-            $icon = '📈'; // <-- IKON BARU
-            $color = '#2563EB'; // Warna biru tua
+        // Tentukan Kategori & Tipe
 
-            // 2. Kategori Keuntungan/Hasil (Investment Income / Income)
+        // Tentukan Tipe & Akun
+        if ($type === 'buy') {
+            $description = "Asset Purchase: " . $asset->name;
+            $transactionType = "expense"; // Uang keluar
+            $icon = "📈";
+            $categoryColor = "#2563EB";
+            $categoryName = "Investments";
         } else { // 'sell'
+            $description = "Asset Sale Proceeds: " . $asset->name;
+            $transactionType = "income"; // Uang masuk
+            $icon = "💸";
+            $categoryColor = "#10B981";
             $categoryName = "Investment Income";
-            $transactionType = "income";
-            $icon = '💸'; // <-- IKON BARU
-            $color = '#10B981'; // Warna hijau
         }
 
-        // Kemudian simpan ke database:
+        // Kategori Otomatis (Investments)
         $category = Category::firstOrCreate(
-            ['user_id' => $user->id, 'name' => $categoryName, 'type' => $transactionType],
-            ['icon' => $icon, 'color' => $color] // <-- Gunakan ikon dan warna yang baru
+            [
+                'name' => $categoryName,
+                'type' => $transactionType,
+                'icon' => $icon,
+                'color' => $categoryColor
+            ]
         );
 
-        // 2. Cari Transaksi Utama yang terkait
-        $mainTransaction = Transaction::where('investment_transaction_id', $investmentTx->id)->first();
+        // 2. Cari Transaksi Utama yang terkait (harus ada)
+        $mainTransaction = $investmentTx->mainTransaction;
 
-        // 3. Update Transaksi Utama
+        // 3. Update Transaksi Utama (dengan Account ID BARU)
         if ($mainTransaction) {
             $mainTransaction->update([
                 'category_id' => $category->category_id,
@@ -264,10 +343,12 @@ class InvestmentTransactionController extends Controller
                 'type' => $transactionType,
                 'description' => $description,
                 'date' => $investmentTx->transaction_date,
+                'source_account_id' => $sourceAccountId,      // <-- DARI FORM
+                'destination_account_id' => $destinationAccountId, // <-- DARI FORM
             ]);
         } else {
             // Jika (karena alasan aneh) transaksi utama tidak ada, buatkan saja
-            $this->createMainTransaction($investmentTx, $asset, $type, $totalAmount);
+            $this->createMainTransaction($investmentTx, $asset, $type, $totalAmount, $sourceAccountId ?? $destinationAccountId);
         }
     }
 

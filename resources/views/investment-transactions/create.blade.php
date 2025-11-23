@@ -43,9 +43,7 @@
                     {{-- Set Alpine.js untuk logic Beli/Jual --}}
                     <form method="POST" action="{{ route('investment-transactions.store') }}" x-data="{ transactionType: '{{ old('transaction_type', 'buy') }}' }">
                         @csrf
-
                         <div class="space-y-6">
-
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                                     Transaction Type
@@ -78,6 +76,54 @@
                                     <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            <div x-show="transactionType === 'buy'" x-transition>
+                                <label for="source_account_id"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Source Account (Sumber Dana)
+                                </label>
+                                <select name="source_account_id" id="source_account_id"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                    <option value="">Pilih akun pembayaran...</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}"
+                                            {{ old('source_account_id') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->name }} (Rp
+                                            {{ number_format($account->current_balance, 0, ',', '.') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Saldo akun ini akan berkurang.
+                                </p>
+                                @error('source_account_id')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div x-show="transactionType === 'sell'" x-transition>
+                                <label for="destination_account_id"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Destination Account (Tujuan Dana)
+                                </label>
+                                <select name="destination_account_id" id="destination_account_id"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                    <option value="">Pilih akun penerima...</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}"
+                                            {{ old('destination_account_id') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->name }} (Rp
+                                            {{ number_format($account->current_balance, 0, ',', '.') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Hasil penjualan akan masuk ke
+                                    akun
+                                    ini.</p>
+                                @error('destination_account_id')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
 
                             <div>
                                 <label for="portfolio_id"

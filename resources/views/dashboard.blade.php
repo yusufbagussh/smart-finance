@@ -10,7 +10,8 @@
             </div>
         </div>
     </x-slot>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        {{-- KARTU 1: TOTAL CASH BALANCE --}}
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
             <div class="flex items-center">
                 <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
@@ -43,6 +44,35 @@
                     </div>
                 </div>
             </a>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <div class="flex items-center">
+                @php
+                    /* Logika icon & bg sama */
+                @endphp
+                <div class="p-3 rounded-full {{ $budgetBgClass ?? 'bg-yellow-100 dark:bg-yellow-900' }}">
+                    <i
+                        class="fas fa-bullseye {{ $budgetIconClass ?? 'text-yellow-600 dark:text-yellow-400' }} text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Budget Status</p>
+                    @if ($budgetSummary)
+                        <p
+                            class="text-xl font-bold {{ $budgetSummary->isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                            {{ number_format($budgetSummary->progress, 1) }}%
+                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Rp {{ number_format(abs($budgetSummary->remaining), 0, ',', '.') }}
+                            {{ $budgetSummary->isOverBudget ? 'over budget' : 'remaining' }}
+                        </p>
+                    @else
+                        <p class="text-xl font-bold text-gray-600 dark:text-gray-400">No Budget Set</p>
+                        <a href="{{ route('budgets.create') }}"
+                            class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Set Budget</a>
+                    @endif
+                </div>
+            </div>
         </div>
 
         {{-- KARTU 3: TOTAL NET WORTH (KARTU BARU) --}}
@@ -86,34 +116,41 @@
                 </div>
             </div>
         </div>
+
+        {{-- KARTU 3: TOTAL RECEIVABLES (PIUTANG) - Dianggap Aset --}}
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
-            <div class="flex items-center">
-                @php
-                    /* Logika icon & bg sama */
-                @endphp
-                <div class="p-3 rounded-full {{ $budgetBgClass ?? 'bg-yellow-100 dark:bg-yellow-900' }}">
-                    <i
-                        class="fas fa-bullseye {{ $budgetIconClass ?? 'text-yellow-600 dark:text-yellow-400' }} text-xl"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Budget Status</p>
-                    @if ($budgetSummary)
-                        <p
-                            class="text-xl font-bold {{ $budgetSummary->isOverBudget ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
-                            {{ number_format($budgetSummary->progress, 1) }}%
+            <a href="{{ route('liabilities.index') }}" class="block hover:opacity-80 transition-opacity">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                        <i class="fas fa-hand-holding-heart text-yellow-600 dark:text-yellow-400 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Receivables (Piutang)</p>
+                        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            Rp {{ number_format($totalReceivables, 0, ',', '.') }}
                         </p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                            Rp {{ number_format(abs($budgetSummary->remaining), 0, ',', '.') }}
-                            {{ $budgetSummary->isOverBudget ? 'over budget' : 'remaining' }}
-                        </p>
-                    @else
-                        <p class="text-xl font-bold text-gray-600 dark:text-gray-400">No Budget Set</p>
-                        <a href="{{ route('budgets.create') }}"
-                            class="text-xs text-blue-600 dark:text-blue-400 hover:underline">Set Budget</a>
-                    @endif
+                    </div>
                 </div>
-            </div>
+            </a>
         </div>
+
+        {{-- KARTU 4: TOTAL PAYABLES (HUTANG) - Kewajiban --}}
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg p-6">
+            <a href="{{ route('liabilities.index') }}" class="block hover:opacity-80 transition-opacity">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 dark:bg-red-900">
+                        <i class="fas fa-hand-holding-usd text-red-600 dark:text-red-400 text-xl"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Total Payables (Hutang)</p>
+                        <p class="text-2xl font-bold text-red-600 dark:text-red-400">
+                            - Rp {{ number_format($totalPayables, 0, ',', '.') }}
+                        </p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -164,7 +201,8 @@
                                 {{-- Input hidden --}}
                                 <input type="hidden" name="date_from" id="chart_date_from"
                                     value="{{ $dateFrom }}">
-                                <input type="hidden" name="date_to" id="chart_date_to" value="{{ $dateTo }}">
+                                <input type="hidden" name="date_to" id="chart_date_to"
+                                    value="{{ $dateTo }}">
                             </div>
 
                             {{-- Tombol Submit Filter --}}

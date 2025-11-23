@@ -56,7 +56,8 @@ class DashboardController extends Controller
             ->sum('current_balance');
 
         // Saldo ini sekarang adalah Saldo KAS (Cash Balance)
-        $currentBalance = $totalIncome - $totalExpense;
+        // $currentBalance = $totalIncome - $totalExpense;
+        $currentBalance = $user->accounts()->sum('current_balance');
 
         // Ini adalah Total Kekayaan Bersih Anda
         // Cash + Investasi + Piutang (Uang kita di orang) - Hutang (Uang orang di kita)
