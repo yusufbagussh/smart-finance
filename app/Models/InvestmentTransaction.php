@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class InvestmentTransaction extends Model
 {
@@ -27,7 +28,7 @@ class InvestmentTransaction extends Model
      */
     public function portfolio(): BelongsTo
     {
-    return $this->belongsTo(Portfolio::class);
+        return $this->belongsTo(Portfolio::class);
     }
 
     /**
@@ -36,5 +37,14 @@ class InvestmentTransaction extends Model
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
+    }
+
+    /**
+     * Relasi ke transaksi cash flow utama (yang memotong/menambah saldo akun).
+     */
+    public function mainTransaction(): HasOne
+    {
+        // Foreign Key di tabel 'transactions' adalah 'investment_transaction_id'
+        return $this->hasOne(Transaction::class, 'investment_transaction_id');
     }
 }

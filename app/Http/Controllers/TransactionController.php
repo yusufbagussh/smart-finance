@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use App\Models\Category;
 use App\Models\Account;
+use App\Models\Liability;
+use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,8 @@ use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
+    // Inject Service
+    public function __construct(protected TransactionService $transactionService) {}
     /**
      * Menampilkan daftar transaksi dengan filter.
      */
@@ -60,6 +64,9 @@ class TransactionController extends Controller
     {
         $user = Auth::user();
         $categories = Category::all();
+
+        $liabilities = $user->liabilities()->where('current_balance', '>', 0)->orderBy('name')->get();
+
         $accounts = $user->accounts()->orderBy('name')->get();
 
         if ($accounts->isEmpty()) {
@@ -67,7 +74,7 @@ class TransactionController extends Controller
                 ->with('error', 'Anda harus membuat Akun (misal: "Dompet Tunai") terlebih dahulu sebelum mencatat transaksi.');
         }
 
-        return view('transactions.create', compact('categories', 'accounts'));
+        return view('transactions.create', compact('categories', 'accounts', 'liabilities')); // <-- Kirim liabilities
     }
 
     /**
@@ -84,14 +91,15 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|gt:0',
             'date' => 'required|date|before_or_equal:today',
             'description' => 'required|string|max:255',
+            'liability_id' => ['nullable', Rule::exists('liabilities', 'id')->where('user_id', $user->id)], // <-- TAMBAHAN INI
         ];
 
         if ($type === 'income') {
             $rules['destination_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
-            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')->where('user_id', $user->id)];
+            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')];
         } elseif ($type === 'expense') {
             $rules['source_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
-            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')->where('user_id', $user->id)];
+            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')];
         } elseif ($type === 'transfer') {
             $rules['source_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
             $rules['destination_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id), 'different:source_account_id'];
@@ -111,10 +119,15 @@ class TransactionController extends Controller
                 'category_id' => $validated['category_id'] ?? null,
                 'source_account_id' => $validated['source_account_id'] ?? null,
                 'destination_account_id' => $validated['destination_account_id'] ?? null,
+                'liability_id' => $validated['liability_id'] ?? null,
             ]);
 
             // 1. Update Saldo Akun
-            $this->adjustAccountBalances($transaction);
+            // GANTI $this->adjustAccountBalances($transaction) DENGAN:
+            $this->transactionService->handleAccountBalance($transaction);
+
+            // GANTI $this->adjustLiabilityBalance($transaction) DENGAN:
+            $this->transactionService->handleLiabilityBalance($transaction);
 
             // 2. Update Budget (Jika Expense)
             if ($transaction->type === 'expense' && $transaction->category_id) {
@@ -132,6 +145,44 @@ class TransactionController extends Controller
     }
 
     /**
+     * Helper baru: Menyesuaikan Saldo Hutang (Liabilitas).
+     */
+    private function adjustLiabilityBalance(Transaction $transaction, $revert = false)
+    {
+        if (!$transaction->liability_id) return;
+
+        $liability = Liability::find($transaction->liability_id);
+        if (!$liability) return;
+
+        $amount = $transaction->amount;
+        $multiplier = $revert ? -1 : 1;
+
+        // LOGIKA BARU:
+
+        // 1. Jika Transaksi adalah EXPENSE (Uang Keluar)
+        // - Untuk Hutang (Payable): Ini adalah PELUNASAN (Saldo hutang berkurang)
+        // - Untuk Piutang (Receivable): Ini adalah TAMBAH PINJAMAN (Saldo piutang bertambah)
+        if ($transaction->type === 'expense') {
+            if ($liability->type === 'payable') {
+                $liability->decrement('current_balance', $amount * $multiplier);
+            } else {
+                $liability->increment('current_balance', $amount * $multiplier);
+            }
+        }
+
+        // 2. Jika Transaksi adalah INCOME (Uang Masuk)
+        // - Untuk Hutang (Payable): Ini adalah TAMBAH HUTANG (Saldo hutang bertambah - jarang terjadi lewat menu transaksi)
+        // - Untuk Piutang (Receivable): Ini adalah PELUNASAN DARI TEMAN (Saldo piutang berkurang)
+        elseif ($transaction->type === 'income') {
+            if ($liability->type === 'payable') {
+                $liability->increment('current_balance', $amount * $multiplier);
+            } else {
+                $liability->decrement('current_balance', $amount * $multiplier);
+            }
+        }
+    }
+
+    /**
      * Menampilkan form untuk mengedit transaksi.
      */
     public function edit(Transaction $transaction)
@@ -141,8 +192,14 @@ class TransactionController extends Controller
 
         $categories = Category::all();
         $accounts = $user->accounts()->orderBy('name')->get();
+        $liabilities = $user->liabilities()->where('current_balance', '>', 0)->orderBy('name')->get();
 
-        return view('transactions.edit', compact('transaction', 'categories', 'accounts'));
+        // Jika sedang mengedit transaksi yang sudah lunas, tambahkan liabilitas tersebut ke daftar
+        if ($transaction->liability_id && $transaction->liability->current_balance <= 0) {
+            $liabilities->push($transaction->liability);
+        }
+
+        return view('transactions.edit', compact('transaction', 'categories', 'accounts', 'liabilities')); // <-- Kirim liabilities
     }
 
     /**
@@ -160,13 +217,14 @@ class TransactionController extends Controller
             'amount' => 'required|numeric|gt:0',
             'date' => 'required|date|before_or_equal:today',
             'description' => 'required|string|max:255',
+            'liability_id' => ['nullable', Rule::exists('liabilities', 'id')->where('user_id', $user->id)], // <-- TAMBAHAN VALIDASI
         ];
         if ($type === 'income') {
             $rules['destination_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
-            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')->where('user_id', $user->id)];
+            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')];
         } elseif ($type === 'expense') {
             $rules['source_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
-            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')->where('user_id', $user->id)];
+            $rules['category_id'] = ['required', Rule::exists('categories', 'category_id')];
         } elseif ($type === 'transfer') {
             $rules['source_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id)];
             $rules['destination_account_id'] = ['required', Rule::exists('accounts', 'id')->where('user_id', $user->id), 'different:source_account_id'];
@@ -183,7 +241,8 @@ class TransactionController extends Controller
             DB::beginTransaction();
 
             // 1. Revert Saldo Lama
-            $this->adjustAccountBalances($transaction, true); // true = revert
+            $this->transactionService->handleAccountBalance($transaction, true);
+            $this->transactionService->handleLiabilityBalance($transaction, true);
 
             // 2. Update Transaksi
             $transaction->update([
@@ -194,10 +253,16 @@ class TransactionController extends Controller
                 'category_id' => $validated['category_id'] ?? null,
                 'source_account_id' => $validated['source_account_id'] ?? null,
                 'destination_account_id' => $validated['destination_account_id'] ?? null,
+                'liability_id' => $validated['liability_id'] ?? null, // <-- SIMPAN liability_id BARU
             ]);
 
-            // 3. Apply Saldo Baru
-            $this->adjustAccountBalances($transaction->fresh());
+            $newTransaction = $transaction->fresh();
+
+            // 4. APPLY Saldo AKUN Baru
+            $this->transactionService->handleAccountBalance($newTransaction);
+
+            // 5. APPLY Saldo HUTANG Baru (JIKA ADA)
+            $this->transactionService->handleLiabilityBalance($newTransaction);
 
             // 4. Update Budget (Old & New)
             // Jika dulu expense, update budget lama
@@ -224,7 +289,7 @@ class TransactionController extends Controller
      */
     public function destroy(Transaction $transaction)
     {
-        // $this->authorize('delete', $transaction);
+        $this->authorize('delete', $transaction);
 
         $oldDate = $transaction->date;
         $oldCategoryId = $transaction->category_id;
@@ -233,13 +298,19 @@ class TransactionController extends Controller
         try {
             DB::beginTransaction();
 
-            // 1. Revert Saldo
-            $this->adjustAccountBalances($transaction, true); // true = revert
+            // 1. Revert Saldo AKUN (Uang kembali ke rekening)
+            // Pastikan Anda menggunakan Service jika sudah membuatnya, atau method helper Anda
+            $this->transactionService->handleAccountBalance($transaction, true); // true = revert
 
-            // 2. Hapus
+            // 2. Revert Saldo HUTANG (Hutang kembali bertambah) -- [BAGIAN INI YANG HILANG]
+            if ($transaction->liability_id) {
+                $this->transactionService->handleLiabilityBalance($transaction, true); // true = revert
+            }
+
+            // 3. Hapus Transaksi
             $transaction->delete();
 
-            // 3. Update Budget (Jika Expense)
+            // 4. Update Budget (Jika Expense)
             if ($oldType === 'expense' && $oldCategoryId) {
                 $this->updateBudget($oldDate, $oldCategoryId);
             }

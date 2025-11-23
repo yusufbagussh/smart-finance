@@ -70,6 +70,11 @@ class User extends Authenticatable
         return $this->hasMany(Account::class);
     }
 
+    public function liabilities(): HasMany
+    {
+        return $this->hasMany(Liability::class);
+    }
+
     // Helper methods
     public function isAdmin()
     {

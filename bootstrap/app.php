@@ -27,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // **Run 3: FINAL CLOSING PRICE (17:00 WIB - Paling Penting)**
         $schedule->command('app:update-asset-prices')
-            ->dailyAt('17:00');
+            ->dailyAt('17:01');
 
         // // 1. Update Per Jam Selama Jam Bursa (09:00 hingga 17:00 WIB)
         // $schedule->command('app:update-asset-prices')

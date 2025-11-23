@@ -22,6 +22,7 @@ class Transaction extends Model
         'investment_transaction_id', // (Dari fitur investasi sebelumnya)
         'source_account_id',      // <-- BARU
         'destination_account_id', // <-- BARU
+        'liability_id',          // <-- BARU
     ];
 
     protected $casts = [
@@ -38,6 +39,11 @@ class Transaction extends Model
     public function category()
     {
         return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function liability(): BelongsTo
+    {
+        return $this->belongsTo(Liability::class);
     }
 
     /**

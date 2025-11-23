@@ -36,6 +36,17 @@ class StoreInvestmentTransactionRequest extends FormRequest
             'quantity' => 'required|numeric|gt:0', // gt:0 = greater than 0
             'price_per_unit' => 'required|numeric|gt:0',
             'fees' => 'nullable|numeric|min:0',
+            // Validasi Baru
+            'source_account_id' => [
+                'nullable',
+                'required_if:transaction_type,buy', // Wajib jika Beli
+                Rule::exists('accounts', 'id')->where('user_id', Auth::id())
+            ],
+            'destination_account_id' => [
+                'nullable',
+                'required_if:transaction_type,sell', // Wajib jika Jual
+                Rule::exists('accounts', 'id')->where('user_id', Auth::id())
+            ],
         ];
     }
 }

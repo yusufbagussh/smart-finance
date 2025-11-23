@@ -17,7 +17,6 @@
                 <div class="p-6 sm:p-8">
                     <form method="POST" action="{{ route('portfolios.store') }}" class="space-y-6">
                         @csrf
-
                         <div>
                             <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 Portfolio Name

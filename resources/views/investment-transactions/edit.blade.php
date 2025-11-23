@@ -83,6 +83,52 @@
                                 @enderror
                             </div>
 
+                            {{-- !! ACCOUNT INTEGRATION (BARU) !! --}}
+                            <div x-show="transactionType === 'buy'" x-transition>
+                                <label for="source_account_id"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Source Account (Money Out)
+                                </label>
+                                <select name="source_account_id" id="source_account_id"
+                                    :required="transactionType === 'buy'"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm sm:text-sm">
+                                    <option value="">Pilih akun sumber dana...</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}"
+                                            {{ old('source_account_id', $investmentTransaction->mainTransaction->source_account_id ?? '') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->name }} (Rp
+                                            {{ number_format($account->current_balance, 0, ',', '.') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('source_account_id')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div x-show="transactionType === 'sell'" x-transition>
+                                <label for="destination_account_id"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Destination Account (Money In)
+                                </label>
+                                <select name="destination_account_id" id="destination_account_id"
+                                    :required="transactionType === 'sell'"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm sm:text-sm">
+                                    <option value="">Pilih akun tujuan dana...</option>
+                                    @foreach ($accounts as $account)
+                                        <option value="{{ $account->id }}"
+                                            {{ old('destination_account_id', $investmentTransaction->mainTransaction->destination_account_id ?? '') == $account->id ? 'selected' : '' }}>
+                                            {{ $account->name }} (Rp
+                                            {{ number_format($account->current_balance, 0, ',', '.') }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('destination_account_id')
+                                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                            {{-- !! AKHIR ACCOUNT INTEGRATION !! --}}
+
                             <div>
                                 <label for="portfolio_id"
                                     class="block text-sm font-medium text-gray-700 dark:text-gray-300">

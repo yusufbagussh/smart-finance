@@ -107,6 +107,51 @@
                         @enderror
                     </div>
 
+                    <div class="mb-6" x-show="type === 'expense' || type === 'income'" x-transition>
+
+                        <label for="liability_id" class="block text-sm font-medium text-gray-700 mb-2">
+                            <span
+                                x-text="type === 'expense' ? 'Link to Debt (Cicilan / Beri Pinjaman)' : 'Link to Debt (Terima Pinjaman / Terima Pelunasan)'"></span>
+                            <span class="text-gray-400 text-xs ml-1">(Optional)</span>
+                        </label>
+
+                        <select name="liability_id" id="liability_id"
+                            class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <option value="">-- None --</option>
+                            @foreach ($liabilities as $liability)
+                                <option value="{{ $liability->id }}" {{-- Pre-select liability yang tersimpan --}}
+                                    {{ old('liability_id', $transaction->liability_id ?? '') == $liability->id ? 'selected' : '' }}>
+
+                                    @if ($liability->type == 'payable')
+                                        [Hutang] {{ $liability->name }}
+                                    @else
+                                        [Piutang] {{ $liability->name }}
+                                    @endif
+                                    (Sisa: Rp {{ number_format($liability->current_balance, 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+
+                        {{-- Penjelasan Dinamis --}}
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400" x-show="type === 'expense'">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Saldo hutang/piutang ini akan <strong>berkurang</strong> (jika bayar hutang) atau
+                            <strong>bertambah</strong> (jika memberi pinjaman).
+                        </p>
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400" x-show="type === 'income'"
+                            style="display: none;">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Saldo hutang/piutang ini akan <strong>berkurang</strong> (jika terima pelunasan) atau
+                            <strong>bertambah</strong> (jika terima hutang baru).
+                        </p>
+
+                        @error('liability_id')
+                            <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    {{-- Dropdown 'To Account' (destination_account_id) dipindahkan ke bawah sini --}}
+
+
                     <div class="mb-6" x-show="type === 'expense' || type === 'transfer'" x-transition>
                         <label for="source_account_id" class="block text-sm font-medium text-gray-700 mb-2">From
                             Account</label>
@@ -250,7 +295,7 @@
 
                             // Jika pindah ke Transfer, atau kategori saat ini tidak cocok dengan tipe baru -> Reset
                             if (newValue === 'transfer' || (selectedOption && selectedOption.style.display ===
-                                'none')) {
+                                    'none')) {
                                 this.$refs.categorySelect.value = '';
                             }
                             if (newValue === 'transfer') {
