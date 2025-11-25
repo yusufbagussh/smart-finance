@@ -13,7 +13,9 @@
         </div>
     </x-slot>
 
+
     <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+
         <div class="p-6">
             <form method="GET" action="{{ route('transactions.index') }}" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -195,6 +197,7 @@
                                 </div>
 
                                 <div class="flex items-center space-x-2 flex-shrink-0">
+                                    {{-- Jika Transaksi Biasa: Tampilkan Edit & Delete --}}
                                     <a href="{{ route('transactions.edit', $transaction) }}"
                                         class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                                         title="Edit">

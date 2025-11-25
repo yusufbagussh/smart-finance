@@ -94,6 +94,34 @@ class CategorySeeder extends Seeder
                 'icon' => '📉',
                 'type' => 'expense'
             ],
+            // [
+            //     'name' => 'Investment',
+            //     'description' => 'Investment purchases and sales',
+            //     'color' => '#8B5CF6',
+            //     'icon' => '💹',
+            //     'type' => 'expense'
+            // ],
+            // [
+            //     'name' => 'Investment Income',
+            //     'description' => 'Returns from investments',
+            //     'color' => '#10B981',
+            //     'icon' => '📊',
+            //     'type' => 'income'
+            // ],
+            [
+                'name' => 'Debt Repayment',
+                'description' => 'Repayment of loans and debts',
+                'color' => '#F59E0B',
+                'icon' => '📉',
+                'type' => 'expense'
+            ],
+            [
+                'name' => 'Debt Collection',
+                'description' => 'Collection of loans and debts',
+                'color' => '#22C55E',
+                'icon' => '🤲',
+                'type' => 'income'
+            ]
         ];
 
         foreach ($categories as $category) {

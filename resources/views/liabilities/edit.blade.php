@@ -66,7 +66,7 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label for="tenor_months"
                                 class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tenor (Bulan)</label>
@@ -92,23 +92,38 @@
                             @enderror
                         </div>
                         <div>
-                            <label for="start_date"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Terima
-                                Dana</label>
-                            <input type="date" name="start_date" id="start_date"
+                            <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Tanggal Terima Dana
+                            </label>
+                            <input type="text" name="start_date" id="start_date"
                                 value="{{ old('start_date', $liability->start_date?->format('Y-m-d')) }}" required
-                                class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 @error('start_date') border-red-500 @enderror">
+                                class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md flatpickr-input dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 @error('start_date') border-red-500 @enderror"
+                                placeholder="Pilih tanggal...">
                             @error('start_date')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+
                         <div>
-                            <label for="due_date"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tanggal Jatuh Tempo
-                                (Akhir)</label>
-                            <input type="date" name="due_date" id="due_date"
-                                value="{{ old('due_date', $liability->due_date?->format('Y-m-d')) }}"
-                                class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 @error('due_date') border-red-500 @enderror">
+                            <label for="due_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Tanggal Jatuh Tempo (Akhir)
+                            </label>
+
+                            <div class="relative mt-1">
+                                {{-- Input Date --}}
+                                <input type="text" name="due_date" id="due_date"
+                                    value="{{ old('due_date', $liability->due_date?->format('Y-m-d')) }}"
+                                    class="block w-full shadow-sm sm:text-sm border-gray-300 rounded-md flatpickr-input dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 pr-10 @error('due_date') border-red-500 @enderror"
+                                    placeholder="Pilih tanggal...">
+
+                                {{-- Tombol Clear (X) --}}
+                                <button type="button" onclick="document.querySelector('#due_date')._flatpickr.clear()"
+                                    class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-400 hover:text-red-500 focus:outline-none transition-colors"
+                                    title="Hapus Tanggal">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
                             @error('due_date')
                                 <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -129,4 +144,24 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                flatpickr("#start_date", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    defaultDate: "{{ old('start_date', $liability->start_date?->format('Y-m-d')) }}",
+                });
+                flatpickr("#due_date", {
+                    dateFormat: "Y-m-d",
+                    altInput: true,
+                    altFormat: "F j, Y",
+                    defaultDate: "{{ old('due_date', $liability->due_date?->format('Y-m-d')) }}",
+                    minDate: "today"
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

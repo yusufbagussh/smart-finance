@@ -4,7 +4,7 @@
             <a href="{{ route('transactions.index') }}" class="mr-4 text-gray-600 hover:text-gray-900">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Add New Transaction') }}
             </h2>
         </div>
@@ -82,25 +82,33 @@
                             @enderror
                         </div>
 
-                        <div class="mb-6">
-                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount
-                                (IDR)</label>
+                        <div x-data="currencyInput('{{ old('amount', 0) }}')">
+
+                            <label for="amount_display" class="block text-sm font-medium text-gray-700 mb-2">
+                                Amount (IDR)
+                            </label>
+
                             <div class="relative mt-1">
-                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">Rp</span>
-                                <input type="number" name="amount" id="amount" value="{{ old('amount') }}"
-                                    step="0.01" min="0.01" required
+                                <span
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400 font-bold">Rp</span>
+
+                                {{-- 1. Input Tampilan (User mengetik di sini) --}}
+                                <input type="text" id="amount_display" x-model="formattedValue" @input="handleInput"
                                     class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                                    placeholder="0.00">
+                                    placeholder="10.000.000">
+
+                                {{-- 2. Input Asli (Yang dikirim ke Server) --}}
+                                <input type="hidden" name="amount" :value="rawValue">
                             </div>
+
                             @error('amount')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
                         <div class="mb-6" x-show="type === 'expense' || type === 'income'" x-transition>
 
-                            <label for="liability_id"
-                                class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="liability_id" class="block text-sm font-medium text-gray-700 mb-2">
                                 <span
                                     x-text="type === 'expense' ? 'Link to Debt (Cicilan / Beri Pinjaman)' : 'Link to Debt (Terima Pinjaman / Terima Pelunasan)'"></span>
                                 <span class="text-gray-400 text-xs ml-1">(Optional)</span>

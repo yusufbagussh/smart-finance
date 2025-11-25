@@ -66,8 +66,8 @@
                                     </a>
                                     @if ($category->transactions_count == 0)
                                         <form method="POST"
-                                            action="{{ route('admin.categories.destroy', $category) }}" class="inline"
-                                            onsubmit="return confirm('Are you sure you want to delete this category?')">
+                                            action="{{ route('admin.categories.destroy', $category) }}"
+                                            class="inline delete-form">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit"
@@ -107,4 +107,27 @@
             </div>
         @endif
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteForms = document.querySelectorAll('.delete-form');
+            deleteForms.forEach(function(form) {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: "This action cannot be undone.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, delete it!'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        });
+    </script>
 </x-app-layout>
