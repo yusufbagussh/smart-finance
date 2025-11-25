@@ -5,7 +5,7 @@
             <a href="{{ route('transactions.index') }}" class="mr-4 text-gray-600 hover:text-gray-900">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
                 {{ __('Edit Transaction') }}
             </h2>
         </div>
@@ -82,17 +82,47 @@
                         @enderror
                     </div>
 
-                    <div class="mb-6">
-                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Amount (IDR)</label>
-                        <div class="relative">
-                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rp</span>
-                            <input type="number" name="amount" id="amount"
-                                value="{{ old('amount', $transaction->amount) }}" step="0.01" min="0.01"
-                                class="pl-10 mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                placeholder="0.00" required>
+                    <div x-data="currencyInput('{{ old('amount', (int) $transaction->amount) }}')">
+
+                        {{-- <div class="mb-6" x-data="{
+                        rawValue: '{{ old('amount', (int) $transaction->amount) }}',
+                        formattedValue: '',
+                        formatCurrency(value) {
+                            let number = String(value).replace(/[^0-9]/g, '');
+                            if (!number) return '';
+                            return new Intl.NumberFormat('id-ID').format(number);
+                        },
+                        updateValues(event) {
+                            let inputVal = event.target.value;
+                            this.rawValue = inputVal.replace(/\./g, '');
+                            this.formattedValue = this.formatCurrency(this.rawValue);
+                        }
+                    }" x-init="formattedValue = formatCurrency(rawValue)"> --}}
+
+                        <label for="amount_display" class="block text-sm font-medium text-gray-700 mb-2">
+                            Jumlah Pinjaman Awal
+                        </label>
+
+                        <div class="relative mt-1">
+                            <span
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400 font-bold">Rp</span>
+
+                            {{-- Input Tampilan --}}
+                            <input type="text" id="amount_display" x-model="formattedValue" @input="handleInput"
+                                class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                placeholder="0">
+
+                            {{-- Input Asli --}}
+                            <input type="hidden" name="amount" :value="rawValue">
                         </div>
+
+                        <p class="mt-1 text-xs text-yellow-600 dark:text-yellow-400">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Perhatian: Mengubah jumlah ini sebaiknya hanya dilakukan jika ada kesalahan input awal.
+                        </p>
+
                         @error('amount')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 

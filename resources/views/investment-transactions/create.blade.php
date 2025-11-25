@@ -197,7 +197,7 @@
                                     @enderror
                                 </div>
 
-                                <div>
+                                <div x-data="currencyInput('{{ old('price_per_unit', 0) }}')">
                                     <label for="price_per_unit"
                                         class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                         Price (per Unit/Gram)
@@ -205,10 +205,15 @@
                                     <div class="relative mt-1">
                                         <span
                                             class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                        <input type="number" name="price_per_unit" id="price_per_unit"
+                                        <input type="text" id="price_per_unit_model" x-model="formattedValue"
+                                            @input="handleInput"
+                                            class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                                            placeholder="100.000">
+                                        <input type="hidden" name="price_per_unit" :value="rawValue">
+                                        {{-- <input type="number" name="price_per_unit" id="price_per_unit"
                                             value="{{ old('price_per_unit') }}" step="0.01" min="0"
                                             class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                            placeholder="0.00" required>
+                                            placeholder="0.00" required> --}}
                                     </div>
                                     @error('price_per_unit')
                                         <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
@@ -216,7 +221,7 @@
                                 </div>
                             </div>
 
-                            <div>
+                            <div x-data="currencyInput('{{ old('fees', 0) }}')">
                                 <label for="fees"
                                     class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                     Transaction Fee (Optional)
@@ -224,10 +229,15 @@
                                 <div class="relative mt-1">
                                     <span
                                         class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                    <input type="number" name="fees" id="fees"
+                                    <input type="text" id="fees_model" x-model="formattedValue"
+                                        @input="handleInput"
+                                        class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                                        placeholder="100.000">
+                                    <input type="hidden" name="fees" :value="rawValue">
+                                    {{-- <input type="number" name="fees" id="fees"
                                         value="{{ old('fees', 0) }}" step="0.01" min="0"
                                         class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                        placeholder="0.00">
+                                        placeholder="0.00"> --}}
                                 </div>
                                 @error('fees')
                                     <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

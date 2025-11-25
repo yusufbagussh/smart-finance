@@ -4,6 +4,42 @@ import Alpine from "alpinejs";
 
 window.Alpine = Alpine;
 
+// --- TAMBAHKAN INI: DEFINISI KOMPONEN GLOBAL ---
+document.addEventListener("alpine:init", () => {
+    Alpine.data("currencyInput", (initialValue = 0) => ({
+        rawValue: initialValue,
+        formattedValue: "",
+
+        init() {
+            // Format nilai awal saat komponen dimuat
+            if (this.rawValue) {
+                this.formattedValue = this.format(this.rawValue);
+            }
+        },
+
+        format(value) {
+            // Hapus karakter selain angka
+            let number = String(value).replace(/[^0-9]/g, "");
+            if (!number) return "";
+            // Format ke Rupiah (tanpa desimal, pakai titik)
+            return new Intl.NumberFormat("id-ID").format(number);
+        },
+
+        handleInput(event) {
+            // 1. Ambil input user
+            let inputVal = event.target.value;
+
+            // 2. Bersihkan titik untuk dapat angka murni (untuk server)
+            // Kita ganti semua titik dengan string kosong
+            this.rawValue = inputVal.replace(/\./g, "");
+
+            // 3. Format ulang untuk tampilan (untuk user)
+            this.formattedValue = this.format(this.rawValue);
+        },
+    }));
+});
+// -----------------------------------------------
+
 Alpine.start();
 
 var themeToggleDarkIcon = document.getElementById("theme-toggle-dark-icon");

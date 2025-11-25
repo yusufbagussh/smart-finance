@@ -39,11 +39,34 @@
         <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <!-- Success Messages -->
             @if (session('success'))
-                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)"
+                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)"
                     class="mb-6 bg-green-100 dark:bg-green-900 border border-green-400 dark:border-green-600 text-green-700 dark:text-green-200 px-4 py-3 rounded relative">
                     <span class="block sm:inline">{{ session('success') }}</span>
                 </div>
             @endif
+
+            @if (session('error'))
+                <div x-data="{ show: true }" x-show="show" x-transition
+                    class="fixed top-24 right-4 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg max-w-sm">
+                    <div class="flex items-start">
+                        <div class="py-1"><i class="fas fa-exclamation-circle mr-3 text-2xl"></i></div>
+                        <div>
+                            <p class="font-bold">Error / Warning</p>
+                            <p class="text-sm">{{ session('error') }}</p>
+                        </div>
+                        <button @click="show = false" class="ml-4 text-red-700 hover:text-red-900">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            @endif
+
+            {{-- @if (session('error'))
+                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 5000)"
+                    class="mb-6 bg-red-100 dark:bg-red-900 border border-red-400 dark:border-red-600 text-red-700 dark:text-red-200 px-4 py-3 rounded relative">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif --}}
 
             <!-- Error Messages -->
             @if ($errors->any())
@@ -227,7 +250,44 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    {{-- <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
+            // 1. Cek Sukses
+            @if (session('success'))
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: {!! json_encode(session('success')) !!}, // <-- PERUBAHAN DI SINI
+                    timer: 3000,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            @endif
+
+            // 2. Cek Error (INI PERBAIKANNYA)
+            @if (session('error')) Swal.fire({
+        icon: 'error',
+        title: 'Action Failed',
+        text: {!! json_encode(session('error')) !!} || 'Terjadi kesalahan yang tidak diketahui.',
+        confirmButtonText: 'Oke',
+        confirmButtonColor: '#d33'
+    }); @endif
+
+            // 3. Cek Validasi Error
+            @if ($errors->any()) let errorMessages = '';
+                @foreach ($errors->all() as $error)
+                    errorMessages += '<li>{{ $error }}</li>';
+                @endforeach
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Input Error',
+                    html: `<ul style="text-align: left;">${errorMessages}</ul>`,
+                }); @endif
+        });
+    </script> --}}
     <!-- Custom Scripts Stack -->
     @stack('scripts')
 </body>

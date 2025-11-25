@@ -33,20 +33,33 @@
                 <form method="POST" action="{{ route('budgets.store') }}">
                     @csrf
 
+
+
                     <!-- Month Selection -->
                     <div class="mb-6">
                         <label for="month" class="block text-sm font-medium text-gray-700 mb-2">
                             Budget Month
                         </label>
-                        <input type="month" name="month" id="month"
-                            value="{{ old('month', now()->format('Y-m')) }}" min="{{ now()->format('Y-m') }}"
-                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            required>
+
+                        <div class="relative">
+                            {{-- Input Text untuk Flatpickr --}}
+                            <input type="text" name="month" id="month" {{-- Value default (Y-m) untuk dikirim ke server --}}
+                                value="{{ old('month', now()->format('Y-m')) }}"
+                                class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                placeholder="Select Month..." required>
+
+                            {{-- Ikon Kalender (Opsional, pemanis) --}}
+                            <div
+                                class="absolute inset-y-0 right-0 px-3 flex items-center pointer-events-none text-gray-400">
+                                <i class="far fa-calendar-alt"></i>
+                            </div>
+                        </div>
+
                         <p class="mt-1 text-xs text-gray-500">
-                            Select the month you want to set a budget for
+                            Pilih bulan dan tahun untuk anggaran ini.
                         </p>
                         @error('month')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
                     {{-- Budget Category --}}
@@ -160,9 +173,56 @@
         </div>
     </div>
 
-    <script>
-        function setAmount(amount) {
-            document.getElementById('limit').value = amount;
-        }
-    </script>
+    @push('styles')
+        {{-- CSS Utama Flatpickr --}}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        {{-- CSS Plugin Month Select --}}
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
+
+        <style>
+            /* Style agar input readonly flatpickr tetap putih/gelap sesuai tema */
+            input[readonly].flatpickr-input {
+                background-color: white !important;
+            }
+
+            .dark input[readonly].flatpickr-input {
+                background-color: #374151 !important;
+            }
+        </style>
+    @endpush
+
+    @push('scripts')
+        {{-- JS Utama Flatpickr --}}
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        {{-- JS Plugin Month Select --}}
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                flatpickr("#month", {
+                    // Mengaktifkan Plugin Month Select
+                    plugins: [
+                        new monthSelectPlugin({
+                            shorthand: true, // Tampilkan "Jan 2025" (true) atau "January 2025" (false)
+                            dateFormat: "Y-m", // Format nilai yang dikirim ke server (misal: 2025-01)
+                            altFormat: "F Y", // Format tampilan user (misal: January 2025)
+                            theme: document.documentElement.classList.contains('dark') ? "dark" :
+                                "light" // Sesuaikan tema dropdown
+                        })
+                    ],
+                    // Set nilai awal
+                    defaultDate: "{{ old('month', now()->format('Y-m')) }}",
+                    // Batasi minDate agar user tidak membuat budget untuk masa lalu (opsional, sesuai kode lama Anda)
+                    minDate: "{{ now()->format('Y-m') }}",
+                    altInput: true,
+                    allowInput: true,
+                });
+            });
+        </script>
+        <script>
+            function setAmount(amount) {
+                document.getElementById('limit').value = amount;
+            }
+        </script>
+    @endpush
 </x-app-layout>

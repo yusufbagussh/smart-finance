@@ -47,6 +47,14 @@ class Transaction extends Model
     }
 
     /**
+     * Relasi ke InvestmentTransaction (jika ada).
+     */
+    public function investmentTransaction()
+    {
+        return $this->belongsTo(InvestmentTransaction::class, 'investment_transaction_id');
+    }
+
+    /**
      * Akun asal uang (untuk Expense/Transfer).
      */
     public function sourceAccount(): BelongsTo

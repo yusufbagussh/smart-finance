@@ -266,13 +266,17 @@
                             <i class="fas fa-brain mr-2"></i>
                             {{ __('AI') }}
                         </x-nav-link>
+                        <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
+                            <i class="fas fa-file-download mr-2"></i>
+                            {{ __('Reports') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
 
             <div class="hidden sm:flex sm:items-center sm:ml-6">
                 <button id="theme-toggle" type="button"
-                    class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
+                    class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5 mr-4">
                     <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                         xmlns="http://www.w3.org/2000/svg">
                         <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>

@@ -102,6 +102,11 @@ class LiabilityController extends Controller
 
             // 2. Buat Transaksi Awal (Logika Bercabang)
             if ($validated['type'] === 'payable') {
+                $category = \App\Models\Category::firstOrCreate(
+                    ['user_id' => $user->id, 'name' => 'Loan Proceeds', 'type' => 'income'],
+                    ['icon' => '🏦', 'color' => '#10B981'] // Warna Hijau
+                );
+
                 // KITA BERHUTANG -> Uang Masuk (Income)
                 $transaction = $user->transactions()->create([
                     'type' => 'income',
@@ -110,8 +115,14 @@ class LiabilityController extends Controller
                     'date' => $validated['start_date'],
                     'destination_account_id' => $validated['account_id'], // Masuk ke akun kita
                     'liability_id' => $liability->id,
+                    'category_id' => $category->id,
                 ]);
             } else {
+                $category = \App\Models\Category::firstOrCreate(
+                    ['user_id' => $user->id, 'name' => 'Lending', 'type' => 'expense'],
+                    ['icon' => '🤝', 'color' => '#F59E0B'] // Warna Kuning/Oranye
+                );
+
                 // KITA KASIH HUTANG -> Uang Keluar (Expense)
                 $transaction = $user->transactions()->create([
                     'type' => 'expense',
@@ -120,6 +131,7 @@ class LiabilityController extends Controller
                     'date' => $validated['start_date'],
                     'source_account_id' => $validated['account_id'], // Keluar dari akun kita
                     'liability_id' => $liability->id,
+                    'category_id' => $category->id,
                 ]);
             }
 

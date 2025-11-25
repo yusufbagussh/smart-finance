@@ -135,6 +135,8 @@ class TransactionController extends Controller
             }
 
             DB::commit();
+
+            return redirect()->route('transactions.index')->with('success', 'Transaction added successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menyimpan transaksi: ' . $e->getMessage());
@@ -232,6 +234,10 @@ class TransactionController extends Controller
         }
         $validated = $request->validate($rules);
 
+        if ($transaction->investment_transaction_id) {
+            return back()->with('error', 'Transaksi ini terikat dengan Investasi. Silakan edit melalui menu Portofolio untuk menjaga konsistensi data.');
+        }
+
         // Simpan data lama untuk update budget nanti
         $oldDate = $transaction->date;
         $oldCategoryId = $transaction->category_id;
@@ -275,6 +281,7 @@ class TransactionController extends Controller
             }
 
             DB::commit();
+            return redirect()->route('transactions.index')->with('success', 'Transaction updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal mengupdate transaksi: ' . $e->getMessage());
@@ -291,6 +298,10 @@ class TransactionController extends Controller
     {
         // $this->authorize('delete', $transaction);
 
+        if ($transaction->investment_transaction_id) {
+            return back()->with('error', 'Transaksi ini terikat dengan Investasi. Silakan hapus melalui menu Portofolio agar saldo aset juga disesuaikan.');
+        }
+
         $oldDate = $transaction->date;
         $oldCategoryId = $transaction->category_id;
         $oldType = $transaction->type;
@@ -304,6 +315,32 @@ class TransactionController extends Controller
 
             // 2. Revert Saldo HUTANG (Hutang kembali bertambah) -- [BAGIAN INI YANG HILANG]
             if ($transaction->liability_id) {
+                $liability = $transaction->liability;
+
+                if ($liability) {
+                    // Cek 1: Apakah Jumlah & Tanggal sama dengan data awal?
+                    $isMatchingData = $transaction->amount == $liability->original_amount &&
+                        $transaction->date->isSameDay($liability->start_date);
+
+                    // Cek 2: Apakah Alur Transaksinya sesuai dengan PENCIPTAAN?
+                    $isCreationFlow = false;
+
+                    if ($liability->type === 'payable' && $transaction->type === 'income') {
+                        // Hutang Dibuat = Uang Masuk
+                        $isCreationFlow = true;
+                    } elseif ($liability->type === 'receivable' && $transaction->type === 'expense') {
+                        // Piutang Dibuat = Uang Keluar
+                        $isCreationFlow = true;
+                    }
+
+                    // KESIMPULAN: Jika Data Cocok DAN Alurnya Penciptaan -> BLOKIR
+                    if ($isMatchingData && $isCreationFlow) {
+                        DB::rollBack();
+                        // return redirect()->route('transactions.index')->with('success', 'Ini adalah transaksi induk pencatatan awal hutang/piutang. Mohon hapus data ini melalui menu Liabilities agar data terhapus sepenuhnya.');
+                        return back()->with('error', 'Ini adalah transaksi induk pencatatan awal hutang/piutang. Mohon hapus data ini melalui menu Liabilities agar data terhapus sepenuhnya.');
+                    }
+                }
+
                 $this->transactionService->handleLiabilityBalance($transaction, true); // true = revert
             }
 
@@ -316,6 +353,8 @@ class TransactionController extends Controller
             }
 
             DB::commit();
+
+            return redirect()->route('transactions.index')->with('success', 'Transaction deleted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menghapus transaksi: ' . $e->getMessage());
