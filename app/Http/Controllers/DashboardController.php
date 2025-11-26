@@ -201,48 +201,79 @@ class DashboardController extends Controller
         // Budget (Menggunakan data expense yang sudah bersih)
         $currentMonthBudgetsQuery = $user->budgets()->with('category')
             ->whereHas('category', function ($query) {
-                $query->where('type', 'expense'); // Hanya kategori expense
+                $query->where('type', 'expense');
             })
             ->where('month', $currentMonth);
 
-        $currentMonthBudgetsUnsorted = clone $currentMonthBudgetsQuery;
-        $currentMonthBudgets = $currentMonthBudgetsQuery->get()->sortByDesc(function ($budget) {
+        // Ambil Collectionnya
+        $currentMonthBudgets = $currentMonthBudgetsQuery->get();
+
+        // Sort untuk tampilan List (Progress bar tertinggi di atas)
+        // (Kita clone agar sorting tidak mengganggu perhitungan selanjutnya, meski di get() sudah aman)
+        $currentMonthBudgetsSorted = $currentMonthBudgets->sortByDesc(function ($budget) {
             if ($budget->limit > 0) return ($budget->spent / $budget->limit) * 100;
             return -1;
         });
 
-        $totalBudgetLimit = $currentMonthBudgetsUnsorted->sum('limit');
+        // 2. Hitung Total Limit (Batas Anggaran)
+        $totalBudgetLimit = $currentMonthBudgets->sum('limit');
+
         $budgetSummary = null;
+
         if ($totalBudgetLimit > 0) {
-            $budgetProgress = ($monthlyExpense / $totalBudgetLimit) * 100;
-            $budgetRemaining = $totalBudgetLimit - $monthlyExpense;
-            $isOverBudget = $monthlyExpense > $totalBudgetLimit;
-            $budgetSummary = (object) ['limit' => $totalBudgetLimit, 'spent' => $monthlyExpense, 'remaining' => $budgetRemaining, 'progress' => $budgetProgress, 'isOverBudget' => $isOverBudget];
+            // 3. [PERBAIKAN UTAMA]
+            // Ambil daftar ID Kategori yang MEMILIKI Budget bulan ini
+            $budgetedCategoryIds = $currentMonthBudgets->pluck('category_id')->toArray();
+
+            // 4. Hitung Total Pengeluaran HANYA untuk kategori yang di-budget
+            $budgetedExpense = $user->transactions()
+                ->expense()
+                ->whereNull('investment_transaction_id') // Tetap filter investasi
+                ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
+                ->whereIn('category_id', $budgetedCategoryIds) // <--- FILTER PENTING
+                ->sum('amount');
+
+            // 5. Kalkulasi Status (Gunakan $budgetedExpense, BUKAN $monthlyExpense)
+            $budgetProgress = ($budgetedExpense / $totalBudgetLimit) * 100;
+            $budgetRemaining = $totalBudgetLimit - $budgetedExpense;
+            $isOverBudget = $budgetedExpense > $totalBudgetLimit;
+
+            $budgetSummary = (object) [
+                'limit' => $totalBudgetLimit,
+                'spent' => $budgetedExpense, // Yang ditampilkan sekarang adalah pengeluaran yg relevan saja
+                'remaining' => $budgetRemaining,
+                'progress' => $budgetProgress,
+                'isOverBudget' => $isOverBudget
+            ];
         }
 
-        // Kirim semua data ke view
-        return view('dashboard', compact(
-            'totalIncome',
-            'totalExpense',
-            'currentBalance',
-            'monthlyIncome',
-            'monthlyExpense',
-            'totalInvestmentValue', // <-- DATA BARU
-            'totalNetWorth',      // <-- DATA BARU
-            'recentTransactions',
-            'categoryBreakdown',
-            'budgetSummary',
-            'currentMonthBudgets',
-            'chartLabels',
-            'chartIncomeData',
-            'chartExpenseData',
-            'chartTitle',
-            'filter', // Filter aktif (daily/monthly)
-            'dateFrom', // Tanggal mulai input (jika ada)
-            'dateTo',    // Tanggal akhir input (jika ada)
-            'totalPayables',
-            'totalReceivables',
-        ));
+        return view('dashboard', [
+            'totalIncome'        => $totalIncome,
+            'totalExpense'       => $totalExpense,
+            'currentBalance'     => $currentBalance,
+            'monthlyIncome'      => $monthlyIncome,
+            'monthlyExpense'     => $monthlyExpense,
+            'totalInvestmentValue' => $totalInvestmentValue,
+            'totalNetWorth'      => $totalNetWorth,
+            'recentTransactions' => $recentTransactions,
+            'categoryBreakdown'  => $categoryBreakdown,
+            'budgetSummary'      => $budgetSummary,
+
+            // !! INI YANG ANDA MINTA !!
+            // Di View namanya '$currentMonthBudgets', tapi isinya diambil dari '$currentMonthBudgetsSorted'
+            'currentMonthBudgets' => $currentMonthBudgetsSorted,
+
+            'chartLabels'        => $chartLabels,
+            'chartIncomeData'    => $chartIncomeData,
+            'chartExpenseData'   => $chartExpenseData,
+            'chartTitle'         => $chartTitle,
+            'filter'             => $filter,
+            'dateFrom'           => $dateFrom,
+            'dateTo'             => $dateTo,
+            // 'totalLiabilities'   => $totalLiabilities, // Jika ada
+            'totalReceivables'   => $totalReceivables, // Jika ada
+            'totalPayables'      => $totalPayables,    // Jika ada
+        ]);
     }
 
     // public function index()
