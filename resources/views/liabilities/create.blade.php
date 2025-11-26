@@ -40,30 +40,31 @@
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Jenis
                             Transaksi</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <label class="cursor-pointer">
-                                <input type="radio" name="type" value="payable" x-model="type" class="sr-only">
-                                <div class="p-4 border-2 rounded-lg text-center transition-colors"
-                                    :class="type === 'payable' ?
-                                        'border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-200' :
-                                        'border-gray-300 dark:border-gray-600'">
-                                    <i class="fas fa-hand-holding-usd text-2xl mb-2"></i>
-                                    <p class="font-semibold">Saya Berhutang</p>
-                                    <span class="text-xs">(Kewajiban)</span>
-                                </div>
-                            </label>
-                            <label class="cursor-pointer">
-                                <input type="radio" name="type" value="receivable" x-model="type" class="sr-only">
-                                <div class="p-4 border-2 rounded-lg text-center transition-colors"
-                                    :class="type === 'receivable' ?
-                                        'border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-200' :
-                                        'border-gray-300 dark:border-gray-600'">
-                                    <i class="fas fa-hand-holding-heart text-2xl mb-2"></i>
-                                    <p class="font-semibold">Saya Memberi Pinjaman</p>
-                                    <span class="text-xs">(Aset)</span>
-                                </div>
-                            </label>
-                        </div>
+<div class="grid grid-cols-2 gap-4">
+    <label class="cursor-pointer h-full"> {{-- Tambahkan h-full disini --}}
+        <input type="radio" name="type" value="payable" x-model="type" class="sr-only">
+        <div class="p-4 border-2 rounded-lg text-center transition-colors h-full flex flex-col justify-center items-center" {{-- Tambahkan h-full flex flex-col justify-center items-center --}}
+            :class="type === 'payable' ?
+                'border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-200' :
+                'border-gray-300 dark:border-gray-600'">
+            <i class="fas fa-hand-holding-usd text-2xl mb-2"></i>
+            <p class="font-semibold">Saya Berhutang</p>
+            <span class="text-xs">(Kewajiban)</span>
+        </div>
+    </label>
+
+    <label class="cursor-pointer h-full"> {{-- Tambahkan h-full disini --}}
+        <input type="radio" name="type" value="receivable" x-model="type" class="sr-only">
+        <div class="p-4 border-2 rounded-lg text-center transition-colors h-full flex flex-col justify-center items-center" {{-- Tambahkan h-full flex flex-col justify-center items-center --}}
+            :class="type === 'receivable' ?
+                'border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-200' :
+                'border-gray-300 dark:border-gray-600'">
+            <i class="fas fa-hand-holding-heart text-2xl mb-2"></i>
+            <p class="font-semibold">Saya Memberi Pinjaman</p>
+            <span class="text-xs">(Aset)</span>
+        </div>
+    </label>
+</div>
                         @error('type')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
