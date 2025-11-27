@@ -42,25 +42,31 @@
                         </select>
                     </div>
 
-                    <div x-data="currencyInput('{{ old('initial_balance', 0) }}')"> <label for="initial_balance"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Saldo Awal (Initial
-                            Balance)</label>
+                    <div x-data="currencyInput('{{ old('initial_balance', 0) }}')">
+                        <label for="initial_balance_display"
+                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Saldo Awal (Initial Balance)
+                        </label>
+
                         <div class="relative mt-1">
                             <span
-                                class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                            <input type="text" id="initial_balance_display" x-model="formattedValue"
-                                @input="handleInput"
-                                class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 @error('initial_balance') border-red-500 @enderror"
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400 font-bold">Rp</span>
+
+                            {{-- 1. Input Tampilan --}}
+                            <input type="text" id="initial_balance_display" inputmode="numeric" {{-- <<-- INI KUNCINYA --}}
+                                x-model="formattedValue" @input="handleInput"
+                                class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500 font-mono font-semibold"
                                 placeholder="100.000">
 
-                            {{-- 2. Input Asli (Yang dikirim ke Server) --}}
-                            <input type="hidden" name="amount" :value="rawValue">
-                            {{-- <input type="number" name="initial_balance" id="initial_balance"
-                                value="{{ old('initial_balance', 0) }}" required step="0.01" min="0"
-                                class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 @error('initial_balance') border-red-500 @enderror"> --}}
+                            {{-- 2. Input Asli (Hidden) --}}
+                            {{-- PERBAIKAN: Ubah name="amount" menjadi "initial_balance" agar terbaca controller --}}
+                            <input type="hidden" name="initial_balance" :value="rawValue">
                         </div>
-                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Masukkan saldo Anda saat ini di akun
-                            ini. Transaksi "Saldo Awal" akan otomatis dibuat.</p>
+
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Masukkan saldo Anda saat ini di akun ini. Transaksi "Saldo Awal" akan otomatis dibuat.
+                        </p>
+
                         @error('initial_balance')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
