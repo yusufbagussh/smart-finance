@@ -88,51 +88,61 @@
     {{-- Mobile Bottom Navigation - UPDATE untuk Admin --}}
     @if (!auth()->user()->isAdmin())
         <div
-            class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden z-50">
-            <div class="flex justify-around items-center h-16 px-2"> {{-- Beri tinggi eksplisit & padding x --}}
+            class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 md:hidden z-50 pb-safe">
+            {{-- Grid 7 Kolom: Pembagian Ruang Sempurna --}}
+            <div class="grid grid-cols-7 h-16 relative">
 
-                {{-- Dashboard --}}
+                {{-- 1. HOME --}}
                 <a href="{{ route('dashboard') }}"
-                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                    <i class="fas fa-home text-xl mb-1"></i>
-                    <span class="text-xs leading-none">Dashboard</span> {{-- leading-none agar lebih rapat --}}
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-home text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">Home</span>
                 </a>
 
-                {{-- Transactions --}}
+                {{-- 2. ACCTS (Accounts) --}}
+                <a href="{{ route('accounts.index') }}"
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('accounts.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-wallet text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">Accts</span>
+                </a>
+
+                {{-- 3. HISTORY (Transactions) --}}
                 <a href="{{ route('transactions.index') }}"
-                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                    <i class="fas fa-exchange-alt text-xl mb-1"></i>
-                    <span class="text-xs leading-none">History</span> {{-- Disingkat agar muat --}}
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-exchange-alt text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">Trx</span>
                 </a>
 
-                {{-- Tombol Add (Styling Disesuaikan) --}}
-                <div class="w-1/5 flex justify-center"> {{-- Wrapper untuk centering --}}
-                    <a href="{{ route('transactions.create') }}" title="Add Transaction"
-                        class="flex flex-col items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-transform">
-                        {{-- Hapus -mt-4, beri w/h eksplisit --}}
-                        <i class="fas fa-plus text-2xl"></i>
-                        {{-- <span class="text-xs mt-1">Add</span> --}} {{-- Teks bisa dihilangkan agar fokus ke ikon --}}
+                {{-- 4. ADD BUTTON (FLOATING CENTER) --}}
+                <div class="relative flex justify-center items-center">
+                    {{-- Tombol melayang keluar (-top-6) --}}
+                    <a href="{{ route('transactions.create') }}"
+                        class="absolute -top-3 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[4px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
+                        <i class="fas fa-plus text-xl"></i>
                     </a>
                 </div>
 
-                {{-- Budget --}}
-                <a href="{{ route('budgets.index') }}"
-                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('budgets.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                    <i class="fas fa-chart-pie text-xl mb-1"></i>
-                    <span class="text-xs leading-none">Budget</span>
+                {{-- 5. DEBT (Liabilities) --}}
+                <a href="{{ route('liabilities.index') }}"
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('liabilities.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-file-invoice-dollar text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">Debt</span>
                 </a>
 
-                {{-- AI Features --}}
-                {{-- <a href="{{ route('ml.index') }}"
-                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                    <i class="fas fa-brain text-xl mb-1"></i>
-                    <span class="text-xs leading-none">AI</span>
-                </a> --}}
+                {{-- 6. INVEST (Portfolios) --}}
                 <a href="{{ route('portfolios.index') }}"
-                    class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                    <i class="fas fa-wallet text-xl mb-1"></i>
-                    <span class="text-xs leading-none">Invest</span> {{-- Ganti nama jadi 'Invest' agar singkat --}}
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-chart-line text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">Invest</span>
                 </a>
+
+                {{-- 7. AI (Insight) --}}
+                <a href="{{ route('ml.index') }}"
+                    class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                    <i class="fas fa-brain text-lg mb-0.5"></i>
+                    <span class="text-[9px] font-medium leading-none">AI</span>
+                </a>
+
             </div>
         </div>
         <!-- Add bottom padding on mobile to prevent content being hidden by bottom nav -->
@@ -141,104 +151,108 @@
         {{-- Cek route --}}
         @if (request()->routeIs('admin.*'))
             {{-- Admin Mobile Bottom Navigation --}}
-            <div class="fixed bottom-0 left-0 right-0 border-t border-purple-700 dark:border-purple-900 md:hidden z-50">
+            <div
+                class="fixed bottom-0 left-0 right-0 border-t border-purple-700 dark:border-purple-900 md:hidden z-50 pb-safe">
                 {{-- Background Ungu --}}
                 <div class="bg-purple-600 dark:bg-purple-800">
-                    <div class="flex justify-around items-center h-16 px-2 text-purple-200 dark:text-purple-300">
-                        {{-- Tinggi h-16 & padding x --}}
 
-                        {{-- 1. Admin Dashboard --}}
+                    {{-- Grid 5 Kolom --}}
+                    <div class="grid grid-cols-5 h-16">
+
+                        {{-- 1. ADMIN DASHBOARD --}}
                         <a href="{{ route('admin.dashboard') }}"
-                            class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('admin.dashboard') ? 'text-white dark:text-white font-semibold' : 'hover:text-white' }}">
-                            <i class="fas fa-tachometer-alt text-xl mb-1"></i>
-                            <span class="text-xs leading-none">Admin</span>
+                            class="flex flex-col items-center justify-center w-full h-full hover:bg-purple-700 dark:hover:bg-purple-900 transition-colors {{ request()->routeIs('admin.dashboard') ? 'text-white font-bold' : 'text-purple-200 hover:text-white' }}">
+                            <i class="fas fa-tachometer-alt text-lg mb-0.5"></i>
+                            <span class="text-[10px] font-medium leading-none">Admin</span>
                         </a>
 
-                        {{-- 2. Users --}}
+                        {{-- 2. USERS --}}
                         <a href="{{ route('admin.users.index') }}"
-                            class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('admin.users.*') ? 'text-white dark:text-white font-semibold' : 'hover:text-white' }}">
-                            <i class="fas fa-users text-xl mb-1"></i>
-                            <span class="text-xs leading-none">Users</span>
+                            class="flex flex-col items-center justify-center w-full h-full hover:bg-purple-700 dark:hover:bg-purple-900 transition-colors {{ request()->routeIs('admin.users.*') ? 'text-white font-bold' : 'text-purple-200 hover:text-white' }}">
+                            <i class="fas fa-users text-lg mb-0.5"></i>
+                            <span class="text-[10px] font-medium leading-none">Users</span>
                         </a>
 
-                        {{-- 3. Tombol Add Category (Styling Mirip User Add) --}}
-                        <div class="w-1/5 flex justify-center"> {{-- Wrapper --}}
-                            <a href="{{ route('admin.categories.create') }}" title="Add Category"
-                                class="flex flex-col items-center justify-center w-14 h-14 bg-white text-purple-600 rounded-full shadow-lg transform hover:scale-105 transition-transform">
-                                {{-- Hapus -mt-4, beri w/h --}}
-                                <i class="fas fa-plus text-2xl"></i>
-                            </a>
-                        </div>
-
-                        {{-- 4. Categories --}}
-                        <a href="{{ route('admin.categories.index') }}"
-                            class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('admin.categories.*') ? 'text-white dark:text-white font-semibold' : 'hover:text-white' }}">
-                            <i class="fas fa-tags text-xl mb-1"></i>
-                            <span class="text-xs leading-none">Categories</span>
-                        </a>
-
-                        {{-- 5. User View --}}
-                        {{-- <a href="{{ route('dashboard') }}"
-                            class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('dashboard') ? 'text-white dark:text-white font-semibold' : 'hover:text-white' }}">
-                            <i class="fas fa-eye text-xl mb-1"></i>
-                            <span class="text-xs leading-none">User View</span>
-                        </a> --}}
+                        {{-- 3. MONITORING (TENGAH - PUSAT PERHATIAN) --}}
                         <a href="{{ route('admin.monitoring.index') }}"
-                            class="flex flex-col items-center justify-center w-1/5 p-2 {{ request()->routeIs('admin.monitoring.*') ? 'text-white dark:text-white font-semibold' : 'text-purple-200 dark:text-purple-300 hover:text-white' }}">
-                            <i class="fas fa-heartbeat text-xl mb-1"></i>
-                            <span class="text-xs leading-none">Monitoring</span>
+                            class="flex flex-col items-center justify-center w-full h-full hover:bg-purple-700 dark:hover:bg-purple-900 transition-colors {{ request()->routeIs('admin.monitoring.*') ? 'text-white font-bold' : 'text-purple-200 hover:text-white' }}">
+                            <i class="fas fa-heartbeat text-xl mb-0.5"></i> {{-- Icon sedikit lebih besar --}}
+                            <span class="text-[10px] font-medium leading-none">Monitor</span>
                         </a>
+
+                        {{-- 4. CATEGORIES --}}
+                        <a href="{{ route('admin.categories.index') }}"
+                            class="flex flex-col items-center justify-center w-full h-full hover:bg-purple-700 dark:hover:bg-purple-900 transition-colors {{ request()->routeIs('admin.categories.*') ? 'text-white font-bold' : 'text-purple-200 hover:text-white' }}">
+                            <i class="fas fa-tags text-lg mb-0.5"></i>
+                            <span class="text-[10px] font-medium leading-none">Categs</span>
+                        </a>
+
+                        {{-- 5. ASSETS (BARU) --}}
+                        <a href="{{ route('assets.index') }}"
+                            class="flex flex-col items-center justify-center w-full h-full hover:bg-purple-700 dark:hover:bg-purple-900 transition-colors {{ request()->routeIs('assets.*') ? 'text-white font-bold' : 'text-purple-200 hover:text-white' }}">
+                            <i class="fas fa-gem text-lg mb-0.5"></i>
+                            <span class="text-[10px] font-medium leading-none">Assets</span>
+                        </a>
+
                     </div>
                 </div>
             </div>
         @else
             <div
-                class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 md:hidden z-50">
-                <div class="flex justify-around items-center h-16 px-2"> {{-- Beri tinggi eksplisit & padding x --}}
+                class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 md:hidden z-50 pb-safe">
+                {{-- Grid 7 Kolom: Pembagian Ruang Sempurna --}}
+                <div class="grid grid-cols-6 h-16 relative">
 
-                    {{-- Dashboard --}}
+                    {{-- 1. HOME --}}
                     <a href="{{ route('dashboard') }}"
-                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                        <i class="fas fa-home text-xl mb-1"></i>
-                        <span class="text-xs leading-none">Dashboard</span> {{-- leading-none agar lebih rapat --}}
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('dashboard') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-home text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">Home</span>
                     </a>
 
-                    {{-- Transactions --}}
+                    {{-- 2. ACCTS (Accounts) --}}
+                    <a href="{{ route('accounts.index') }}"
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('accounts.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-wallet text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">Accts</span>
+                    </a>
+
+                    {{-- 3. HISTORY (Transactions) --}}
                     <a href="{{ route('transactions.index') }}"
-                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                        <i class="fas fa-exchange-alt text-xl mb-1"></i>
-                        <span class="text-xs leading-none">History</span> {{-- Disingkat agar muat --}}
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-exchange-alt text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">Trx</span>
                     </a>
 
-                    {{-- Tombol Add (Styling Disesuaikan) --}}
-                    <div class="w-1/5 flex justify-center"> {{-- Wrapper untuk centering --}}
-                        <a href="{{ route('transactions.create') }}" title="Add Transaction"
-                            class="flex flex-col items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg transform hover:scale-105 transition-transform">
-                            {{-- Hapus -mt-4, beri w/h eksplisit --}}
-                            <i class="fas fa-plus text-2xl"></i>
-                            {{-- <span class="text-xs mt-1">Add</span> --}} {{-- Teks bisa dihilangkan agar fokus ke ikon --}}
+                    {{-- 4. ADD BUTTON (FLOATING CENTER) --}}
+                    {{-- <div class="relative flex justify-center items-center">
+                        <a href="{{ route('transactions.create') }}"
+                            class="absolute -top-3 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[2px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
+                            <i class="fas fa-plus text-xl"></i>
                         </a>
-                    </div>
+                    </div> --}}
 
-                    {{-- Budget --}}
-                    <a href="{{ route('budgets.index') }}"
-                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('budgets.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                        <i class="fas fa-chart-pie text-xl mb-1"></i>
-                        <span class="text-xs leading-none">Budget</span>
+                    {{-- 5. DEBT (Liabilities) --}}
+                    <a href="{{ route('liabilities.index') }}"
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('liabilities.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-file-invoice-dollar text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">Debt</span>
                     </a>
 
-                    {{-- AI Features --}}
-                    {{-- <a href="{{ route('ml.index') }}"
-                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                        <i class="fas fa-brain text-xl mb-1"></i>
-                        <span class="text-xs leading-none">AI</span>
-                    </a> --}}
-                    {{-- AI Features diganti Portfolios --}}
+                    {{-- 6. INVEST (Portfolios) --}}
                     <a href="{{ route('portfolios.index') }}"
-                        class="flex flex-col items-center justify-center w-1/5 p-1 {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400 hover:text-blue-500' }}">
-                        <i class="fas fa-wallet text-xl mb-1"></i>
-                        <span class="text-xs leading-none">Invest</span>
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-chart-line text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">Invest</span>
                     </a>
+
+                    {{-- 7. AI (Insight) --}}
+                    <a href="{{ route('ml.index') }}"
+                        class="flex flex-col items-center justify-center w-full h-full hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors {{ request()->routeIs('ml.*') ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400' }}">
+                        <i class="fas fa-brain text-lg mb-0.5"></i>
+                        <span class="text-[9px] font-medium leading-none">AI</span>
+                    </a>
+
                 </div>
             </div>
         @endif
