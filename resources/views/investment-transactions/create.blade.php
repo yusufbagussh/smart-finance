@@ -205,7 +205,7 @@
                                     <div class="relative mt-1">
                                         <span
                                             class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                        <input type="text" id="price_per_unit_model" x-model="formattedValue"
+                                        <input type="text"  inputmode="numeric"  id="price_per_unit_model" x-model="formattedValue"
                                             @input="handleInput"
                                             class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
                                             placeholder="100.000">
