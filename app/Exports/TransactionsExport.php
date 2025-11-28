@@ -67,7 +67,7 @@ class TransactionsExport implements FromCollection, WithHeadings, WithMapping, W
         return [
             $transaction->date->format('Y-m-d'),
             ucfirst($transaction->type),
-            $transaction->category->name,
+            $transaction->category->name ?? 'Uncategorized',
             $transaction->description,
             $transaction->type === 'income' ? $transaction->amount : -$transaction->amount,
             $transaction->created_at->format('Y-m-d H:i:s')

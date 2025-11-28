@@ -44,7 +44,7 @@ class IncomeSheet implements FromCollection, WithHeadings, WithMapping, WithStyl
     {
         return [
             $transaction->date->format('Y-m-d'),
-            $transaction->category->name,
+            $transaction->category->name ?? 'Uncategorized',
             $transaction->description,
             $transaction->amount
         ];
