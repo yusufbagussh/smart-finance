@@ -83,24 +83,8 @@
                     </div>
 
                     <div x-data="currencyInput('{{ old('amount', (int) $transaction->amount) }}')">
-
-                        {{-- <div class="mb-6" x-data="{
-                        rawValue: '{{ old('amount', (int) $transaction->amount) }}',
-                        formattedValue: '',
-                        formatCurrency(value) {
-                            let number = String(value).replace(/[^0-9]/g, '');
-                            if (!number) return '';
-                            return new Intl.NumberFormat('id-ID').format(number);
-                        },
-                        updateValues(event) {
-                            let inputVal = event.target.value;
-                            this.rawValue = inputVal.replace(/\./g, '');
-                            this.formattedValue = this.formatCurrency(this.rawValue);
-                        }
-                    }" x-init="formattedValue = formatCurrency(rawValue)"> --}}
-
                         <label for="amount_display" class="block text-sm font-medium text-gray-700 mb-2">
-                            Jumlah Pinjaman Awal
+                            Amount (IDR)
                         </label>
 
                         <div class="relative mt-1">
@@ -108,7 +92,8 @@
                                 class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400 font-bold">Rp</span>
 
                             {{-- Input Tampilan --}}
-                            <input type="text" id="amount_display" x-model="formattedValue" @input="handleInput"
+                            <input type="text" inputmode="numeric" id="amount_display" x-model="formattedValue"
+                                @input="handleInput"
                                 class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                                 placeholder="0">
 

@@ -21,19 +21,18 @@
                         @csrf
                         @method('PUT')
 
-                        <div>
-                            <label for="current_price"
-                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Current Price
+                        <div x-data="currencyInput('{{ old('current_price', (int) $asset->current_price) }}')">
+                            <label for="current_price_display" class="block text-sm font-medium text-gray-700 mb-2">
+                                Initial Price
                             </label>
                             <div class="relative mt-1">
                                 <span
                                     class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                <input type="number" name="current_price" id="current_price"
-                                    value="{{ old('current_price', $asset->current_price) }}" step="0.01"
-                                    min="0"
-                                    class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                    placeholder="0.00" required>
+                                <input type="text" inputmode="numeric" id="current_price_display"
+                                    x-model="formattedValue" @input="updateValues"
+                                    class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500 font-mono font-semibold"
+                                    placeholder="0.00">
+                                <input type="hidden" name="current_price" :value="rawValue">
                             </div>
                             @error('current_price')
                                 <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>

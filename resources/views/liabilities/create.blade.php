@@ -127,10 +127,10 @@
                                     class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400 font-bold">Rp</span>
 
                                 {{-- 1. Input Tampilan (User mengetik di sini) --}}
-                                <input type="text" id="original_amount_display" x-model="formattedValue"
-                                    @input="updateValues"
+                                <input type="text" inputmode="numeric" id="original_amount_display"
+                                    x-model="formattedValue" @input="updateValues"
                                     class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500 font-mono font-semibold"
-                                    placeholder="10.000.000">
+                                    placeholder="0.00">
 
                                 {{-- 2. Input Asli (Yang dikirim ke Server) --}}
                                 <input type="hidden" name="original_amount" :value="rawValue">
