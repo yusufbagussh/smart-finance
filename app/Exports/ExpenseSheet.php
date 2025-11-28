@@ -44,7 +44,7 @@ class ExpenseSheet implements FromCollection, WithHeadings, WithMapping, WithSty
     {
         return [
             $transaction->date->format('Y-m-d'),
-            $transaction->category->name,
+            $transaction->category->name ?? 'Uncategorized',
             $transaction->description,
             $transaction->amount
         ];

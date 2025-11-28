@@ -44,7 +44,7 @@ class CategoryBreakdownSheet implements FromCollection, WithHeadings, WithMappin
     public function map($row): array
     {
         return [
-            $row->category->name,
+            $row->category->name ?? 'Uncategorized',
             ucfirst($row->type),
             $row->count,
             $row->total
