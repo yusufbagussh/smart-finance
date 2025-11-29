@@ -12,29 +12,6 @@
         </div>
     </x-slot>
 
-    {{-- Kita butuh Flatpickr untuk tanggal --}}
-    @push('styles')
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-        <style>
-            input[readonly].flatpickr-input {
-                background-color: white !important;
-            }
-
-            .dark input[readonly].flatpickr-input {
-                background-color: #374151 !important;
-                /* bg-gray-700 */
-            }
-
-            input#transaction_date {
-                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18' /%3E%3C/svg%3E");
-                background-repeat: no-repeat;
-                background-position: right 0.75rem center;
-                background-size: 1.25rem;
-                padding-right: 2.5rem;
-            }
-        </style>
-    @endpush
-
     <div class="py-12">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
@@ -144,25 +121,25 @@
                                     <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
                             </div>
-
-                            <div>
+                            <div class="mb-6">
                                 <label for="asset_id"
-                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Asset
                                 </label>
-                                <select name="asset_id" id="asset_id" required
-                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">Select an asset</option>
+
+                                {{-- Select Biasa (Akan diubah oleh Select2) --}}
+                                <select name="asset_id" id="asset_id" class="w-full" required>
+                                    <option value="">Pilih Aset...</option>
                                     @foreach ($assets as $asset)
                                         <option value="{{ $asset->id }}"
-                                            {{ old('asset_id') == $asset->id ? 'selected' : '' }}>
-                                            {{ $asset->name }} ({{ $asset->code }}
-                                            - Rp{{ number_format($asset->current_price, 2, ',', '.') }}
-                                            -
-                                            {{ $asset->price_last_updated_at ? $asset->price_last_updated_at->format('M d, H:i') : 'N/A' }})
+                                            {{ old('asset_id', $investmentTransaction->asset_id ?? '') == $asset->id ? 'selected' : '' }}
+                                            data-price="{{ $asset->current_price }}">
+                                            {{ $asset->code }} - {{ $asset->name }}
+                                            (Rp {{ number_format($asset->current_price, 0, ',', '.') }})
                                         </option>
                                     @endforeach
                                 </select>
+
                                 @error('asset_id')
                                     <p class="mt-2 text-sm text-red-600 dark:text-red-400">{{ $message }}</p>
                                 @enderror
@@ -205,10 +182,10 @@
                                     <div class="relative mt-1">
                                         <span
                                             class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                        <input type="text"  inputmode="numeric"  id="price_per_unit_model" x-model="formattedValue"
-                                            @input="handleInput"
+                                        <input type="text" inputmode="numeric" id="price_per_unit_model"
+                                            x-model="formattedValue" @input="handleInput"
                                             class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                            placeholder="100.000">
+                                            placeholder="0.00">
                                         <input type="hidden" name="price_per_unit" :value="rawValue">
                                         {{-- <input type="number" name="price_per_unit" id="price_per_unit"
                                             value="{{ old('price_per_unit') }}" step="0.01" min="0"
@@ -232,7 +209,7 @@
                                     <input type="text" id="fees_model" x-model="formattedValue"
                                         @input="handleInput"
                                         class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                        placeholder="100.000">
+                                        placeholder="0.00">
                                     <input type="hidden" name="fees" :value="rawValue">
                                     {{-- <input type="number" name="fees" id="fees"
                                         value="{{ old('fees', 0) }}" step="0.01" min="0"
@@ -276,6 +253,47 @@
                     altFormat: "F j, Y",
                     defaultDate: "{{ old('transaction_date', date('Y-m-d')) }}",
                     maxDate: "today" // Tidak bisa mencatat transaksi di masa depan
+                });
+            });
+        </script>
+
+        {{-- <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> --}}
+        <script>
+            $(document).ready(function() {
+                // Inisialisasi Select2
+                $('#asset_id').select2({
+                    placeholder: "Cari aset (Saham, Reksadana, Emas)...",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Event Listener saat Aset dipilih
+                $('#asset_id').on('select2:select', function(e) {
+                    var selectedOption = $(this).find(':selected');
+                    var price = selectedOption.data('price'); // Misal: "173.00"
+
+                    // Pastikan ID input sesuai dengan yang ada di HTML Anda
+                    // (Di kode sebelumnya ID-nya 'price_per_unit', tapi di snippet Anda 'price_per_unit_model')
+                    // Sesuaikan ID di bawah ini:
+                    var priceInput = document.getElementById('price_per_unit') || document.getElementById(
+                        'price_per_unit_model');
+
+                    if (price !== undefined && priceInput) {
+                        // --- PERBAIKAN DI SINI ---
+
+                        // 1. Ubah string "173.00" menjadi float 173.00
+                        var floatPrice = parseFloat(price);
+
+                        // 2. Bulatkan ke bawah agar desimal .00 hilang (jadi 173)
+                        // Ini mencegah formatter menganggap .00 sebagai angka ribuan
+                        var cleanPrice = Math.floor(floatPrice);
+
+                        // 3. Masukkan ke input
+                        priceInput.value = cleanPrice;
+
+                        // 4. Picu event agar Alpine memformat tampilannya (menjadi "173")
+                        priceInput.dispatchEvent(new Event('input'));
+                    }
                 });
             });
         </script>

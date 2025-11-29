@@ -18,6 +18,107 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/style.css">
 
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        input[readonly].flatpickr-input {
+            background-color: white !important;
+        }
+
+        .dark input[readonly].flatpickr-input {
+            background-color: #374151 !important;
+            /* bg-gray-700 */
+        }
+
+        input#transaction_date {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='1.5' stroke='%239ca3af' class='w-6 h-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0h18' /%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25rem;
+            padding-right: 2.5rem;
+        }
+
+        /* --- 1. STYLE DASAR (MENYERUPAI TAILWIND INPUT) --- */
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container .select2-selection--single {
+            height: 42px !important;
+            /* Tinggi standar Tailwind input */
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            /* gray-300 */
+            border-radius: 0.375rem;
+            /* rounded-md */
+            background-color: #ffffff;
+            display: flex;
+            align-items: center;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+            right: 10px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            color: #374151;
+            /* gray-700 */
+            line-height: normal;
+        }
+
+        /* --- 2. DARK MODE SUPPORT (PENTING!) --- */
+        /* Kita targetkan parent .dark yang ada di tag HTML */
+
+        /* Kotak Utama saat Dark Mode */
+        .dark .select2-container .select2-selection--single {
+            background-color: #374151 !important;
+            /* bg-gray-700 */
+            border-color: #4b5563 !important;
+            /* border-gray-600 */
+        }
+
+        .dark .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #e5e7eb !important;
+            /* text-gray-200 */
+        }
+
+        /* Dropdown Menu saat Dark Mode */
+        .dark .select2-dropdown {
+            background-color: #374151 !important;
+            /* bg-gray-700 */
+            border-color: #4b5563 !important;
+            /* border-gray-600 */
+            color: #e5e7eb !important;
+        }
+
+        /* Kotak Pencarian di dalam Dropdown saat Dark Mode */
+        .dark .select2-search__field {
+            background-color: #1f2937 !important;
+            /* bg-gray-900 */
+            color: #e5e7eb !important;
+            border-color: #4b5563 !important;
+        }
+
+        /* Item List saat Dark Mode */
+        .dark .select2-results__option {
+            color: #e5e7eb;
+        }
+
+        /* Item saat di-hover / dipilih */
+        .dark .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+            background-color: #4f46e5 !important;
+            /* indigo-600 */
+            color: white !important;
+        }
+
+        .dark .select2-container--default .select2-results__option--selected {
+            background-color: #4b5563 !important;
+            /* gray-600 */
+        }
+    </style>
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -264,6 +365,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
     {{-- <script>
         document.addEventListener('DOMContentLoaded', function() {
 

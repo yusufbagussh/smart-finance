@@ -56,7 +56,7 @@
                             <input type="text" id="initial_balance_display" inputmode="numeric" {{-- <<-- INI KUNCINYA --}}
                                 x-model="formattedValue" @input="handleInput"
                                 class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500 font-mono font-semibold"
-                                placeholder="100.000">
+                                placeholder="0.00">
 
                             {{-- 2. Input Asli (Hidden) --}}
                             {{-- PERBAIKAN: Ubah name="amount" menjadi "initial_balance" agar terbaca controller --}}

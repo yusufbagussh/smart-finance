@@ -157,12 +157,13 @@
                                 </label>
                                 <select name="asset_id" id="asset_id" required
                                     class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                    <option value="">Select an asset</option>
+                                    <option value="">Pilih Aset...</option>
                                     @foreach ($assets as $asset)
-                                        {{-- PERUBAHAN 5: asset_id --}}
                                         <option value="{{ $asset->id }}"
-                                            {{ old('asset_id', $investmentTransaction->asset_id) == $asset->id ? 'selected' : '' }}>
-                                            {{ $asset->name }} ({{ $asset->code }})
+                                            {{ old('asset_id', $investmentTransaction->asset_id ?? '') == $asset->id ? 'selected' : '' }}
+                                            data-price="{{ $asset->current_price }}">
+                                            {{ $asset->code }} - {{ $asset->name }}
+                                            (Rp {{ number_format($asset->current_price, 0, ',', '.') }})
                                         </option>
                                     @endforeach
                                 </select>
@@ -213,10 +214,10 @@
                                     <div class="relative mt-1">
                                         <span
                                             class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500 dark:text-gray-400">Rp</span>
-                                        <input type="text"  inputmode="numeric" id="price_per_unit_model" x-model="formattedValue"
-                                            @input="handleInput"
+                                        <input type="text" inputmode="numeric" id="price_per_unit_model"
+                                            x-model="formattedValue" @input="handleInput"
                                             class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                            placeholder="100.000">
+                                            placeholder="0.00">
                                         <input type="hidden" name="price_per_unit" :value="rawValue">
                                         {{-- PERUBAHAN 5: price_per_unit --}}
                                         {{-- <input type="number" name="price_per_unit" id="price_per_unit"
@@ -243,7 +244,7 @@
                                     <input type="text" id="fees_model" x-model="formattedValue"
                                         @input="handleInput"
                                         class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
-                                        placeholder="100.000">
+                                        placeholder="0.00">
                                     <input type="hidden" name="fees" :value="rawValue">
                                 </div>
                                 @error('fees')
@@ -285,6 +286,46 @@
                     {{-- PERUBAHAN 5 (Script): transaction_date --}}
                     defaultDate: "{{ old('transaction_date', $investmentTransaction->transaction_date->format('Y-m-d')) }}",
                     maxDate: "today" // Tidak bisa mencatat transaksi di masa depan
+                });
+            });
+        </script>
+
+        <script>
+            $(document).ready(function() {
+                // Inisialisasi Select2
+                $('#asset_id').select2({
+                    placeholder: "Cari aset (Saham, Reksadana, Emas)...",
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Event Listener saat Aset dipilih
+                $('#asset_id').on('select2:select', function(e) {
+                    var selectedOption = $(this).find(':selected');
+                    var price = selectedOption.data('price'); // Misal: "173.00"
+
+                    // Pastikan ID input sesuai dengan yang ada di HTML Anda
+                    // (Di kode sebelumnya ID-nya 'price_per_unit', tapi di snippet Anda 'price_per_unit_model')
+                    // Sesuaikan ID di bawah ini:
+                    var priceInput = document.getElementById('price_per_unit') || document.getElementById(
+                        'price_per_unit_model');
+
+                    if (price !== undefined && priceInput) {
+                        // --- PERBAIKAN DI SINI ---
+
+                        // 1. Ubah string "173.00" menjadi float 173.00
+                        var floatPrice = parseFloat(price);
+
+                        // 2. Bulatkan ke bawah agar desimal .00 hilang (jadi 173)
+                        // Ini mencegah formatter menganggap .00 sebagai angka ribuan
+                        var cleanPrice = Math.floor(floatPrice);
+
+                        // 3. Masukkan ke input
+                        priceInput.value = cleanPrice;
+
+                        // 4. Picu event agar Alpine memformat tampilannya (menjadi "173")
+                        priceInput.dispatchEvent(new Event('input'));
+                    }
                 });
             });
         </script>
