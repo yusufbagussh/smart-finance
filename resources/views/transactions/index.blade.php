@@ -14,84 +14,127 @@
     </x-slot>
 
 
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
+    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6" x-data="{ showFilters: {{ request()->hasAny(['search', 'type', 'category_id', 'date_from', 'date_to']) ? 'true' : 'false' }} }">
 
         <div class="p-6">
-            <form method="GET" action="{{ route('transactions.index') }}" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                    <div class="lg:col-span-2">
-                        <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search
-                            Description</label>
-                        <input type="text" name="search" id="search" value="{{ request('search') }}"
-                            class="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-200"
-                            placeholder="Search transactions...">
-                    </div>
+            {{-- Header Filter (Selalu Tampil) --}}
+            <div class="flex items-center justify-between cursor-pointer" @click="showFilters = !showFilters">
+                <div class="flex items-center">
+                    <i class="fas fa-filter text-gray-500 dark:text-gray-400 mr-2"></i>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                        Filter Transactions
+                    </h3>
+                    {{-- Badge indikator jika ada filter aktif --}}
+                    @if (request()->hasAny(['search', 'type', 'category_id', 'date_from', 'date_to']))
+                        <span
+                            class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Active
+                        </span>
+                    @endif
+                </div>
+                <button type="button"
+                    class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-transform duration-200"
+                    :class="{ 'rotate-180': showFilters }">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
 
-                    <div>
-                        <label for="type"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-                        <select name="type" id="type"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-200">
-                            <option value="">All Types</option>
-                            <option value="income" {{ request('type') === 'income' ? 'selected' : '' }}>Income</option>
-                            <option value="expense" {{ request('type') === 'expense' ? 'selected' : '' }}>Expense
-                            </option>
-                            <option value="transfer" {{ request('type') === 'transfer' ? 'selected' : '' }}>Transfer
-                            </option>
-                        </select>
-                    </div>
+            {{-- Form Filter (Collapsible) --}}
+            <div x-show="showFilters" x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                x-transition:enter-end="opacity-100 transform translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 transform translate-y-0"
+                x-transition:leave-end="opacity-0 transform -translate-y-2"
+                class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
 
-                    <div>
-                        <label for="category_id"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
-                        <select name="category_id" id="category_id"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-200">
-                            <option value="">All Categories</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->category_id }}"
-                                    {{ request('category_id') == $category->category_id ? 'selected' : '' }}>
-                                    {{ $category->icon }} {{ $category->name }}
+                <form method="GET" action="{{ route('transactions.index') }}" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="lg:col-span-2">
+                            <label for="search"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Search
+                                Description</label>
+                            <div class="relative mt-1">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-search text-gray-400"></i>
+                                </div>
+                                <input type="text" name="search" id="search" value="{{ request('search') }}"
+                                    class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Search transactions...">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="type"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                            <select name="type" id="type"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-200">
+                                <option value="">All Types</option>
+                                <option value="income" {{ request('type') === 'income' ? 'selected' : '' }}>Income
                                 </option>
-                            @endforeach
-                        </select>
+                                <option value="expense" {{ request('type') === 'expense' ? 'selected' : '' }}>Expense
+                                </option>
+                                <option value="transfer" {{ request('type') === 'transfer' ? 'selected' : '' }}>Transfer
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="category_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Category</label>
+                            <select name="category_id" id="category_id"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-200">
+                                <option value="">All Categories</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->category_id }}"
+                                        {{ request('category_id') == $category->category_id ? 'selected' : '' }}>
+                                        {{ $category->icon }} {{ $category->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="lg:col-span-1">
+                            <label for="date_range"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date Range</label>
+                            <div class="relative mt-1">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="far fa-calendar-alt text-gray-400"></i>
+                                </div>
+                                <input type="text" id="date_range" name="date_range"
+                                    class="pl-10 block w-full shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
+                                    placeholder="Select dates..."
+                                    value="{{ request('date_from') && request('date_to') ? request('date_from') . ' to ' . request('date_to') : '' }}">
+                                <input type="hidden" name="date_from" id="date_from"
+                                    value="{{ request('date_from') }}">
+                                <input type="hidden" name="date_to" id="date_to" value="{{ request('date_to') }}">
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="lg:col-span-1">
-                        <label for="date_range" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date
-                            Range</label>
-                        {{-- Input teks untuk Flatpickr --}}
-                        <input type="text" id="date_range" name="date_range"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm dark:text-gray-200"
-                            placeholder="Select date range..."
-                            value="{{ request('date_from') && request('date_to') ? request('date_from') . ' to ' . request('date_to') : '' }}">
-                        {{-- Tampilkan range yg ada --}}
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4">
+                        <div class="flex space-x-2 mb-2 sm:mb-0">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 transition ease-in-out duration-150">
+                                <i class="fas fa-search mr-2"></i> Apply Filter
+                            </button>
+                            @if (request()->hasAny(['search', 'type', 'category_id', 'date_from', 'date_to']))
+                                <a href="{{ route('transactions.index') }}"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600 transition ease-in-out duration-150">
+                                    <i class="fas fa-times mr-2"></i> Clear
+                                </a>
+                            @endif
+                        </div>
 
-                        {{-- Input hidden untuk mengirim date_from dan date_to --}}
-                        <input type="hidden" name="date_from" id="date_from" value="{{ request('date_from') }}">
-                        <input type="hidden" name="date_to" id="date_to" value="{{ request('date_to') }}">
+                        {{-- Pindahkan counter ke dalam form agar terlihat saat dibuka --}}
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            Total: <span
+                                class="font-semibold text-gray-900 dark:text-gray-100">{{ $transactions->total() }}</span>
+                            transactions
+                        </div>
                     </div>
-                </div>
-
-                <div
-                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex space-x-2 mb-2 sm:mb-0">
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700">
-                            <i class="fas fa-search mr-2"></i>
-                            Filter
-                        </button>
-                        <a href="{{ route('transactions.index') }}"
-                            class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
-                            <i class="fas fa-times mr-2"></i>
-                            Clear
-                        </a>
-                    </div>
-
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                        Showing {{ $transactions->count() }} of {{ $transactions->total() }} transactions
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 

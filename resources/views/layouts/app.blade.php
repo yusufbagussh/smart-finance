@@ -218,7 +218,7 @@
                 <div class="relative flex justify-center items-center">
                     {{-- Tombol melayang keluar (-top-6) --}}
                     <a href="{{ route('transactions.create') }}"
-                        class="absolute -top-3 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[4px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
+                        class="absolute w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[4px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
                         <i class="fas fa-plus text-xl"></i>
                     </a>
                 </div>
@@ -326,12 +326,12 @@
                     </a>
 
                     {{-- 4. ADD BUTTON (FLOATING CENTER) --}}
-                    {{-- <div class="relative flex justify-center items-center">
-                        <a href="{{ route('transactions.create') }}"
-                            class="absolute -top-3 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[2px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
+                    <div class="relative flex justify-center items-center">
+                        <a href="{{ route('transactions.create') }}" {{-- -top-1 --}}
+                            class="absolute w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg border-[2px] border-gray-50 dark:border-gray-900 flex items-center justify-center hover:bg-blue-700 transition-transform active:scale-95">
                             <i class="fas fa-plus text-xl"></i>
                         </a>
-                    </div> --}}
+                    </div>
 
                     {{-- 5. DEBT (Liabilities) --}}
                     <a href="{{ route('liabilities.index') }}"

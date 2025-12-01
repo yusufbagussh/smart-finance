@@ -38,7 +38,7 @@
     @endif --}}
 
     {{-- 1. HASIL ANALISIS AI (Sudah ada) --}}
-    <div x-data="{ open: true }"
+    <div x-data="{ open: false }"
         class="mb-6 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 shadow-sm rounded-lg">
 
         {{-- Header (Tombol Toggle) --}}
