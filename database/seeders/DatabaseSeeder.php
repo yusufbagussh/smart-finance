@@ -17,9 +17,9 @@ class DatabaseSeeder extends Seeder
             AssetSeeder::class,
             UserSeeder::class,
             CategorySeeder::class,
-            TransactionBudgetSeeder::class,
-            TransactionSeeder::class,
-            BudgetSeeder::class,
+            // TransactionBudgetSeeder::class,
+            // TransactionSeeder::class,
+            // BudgetSeeder::class,
         ]);
     }
 }
