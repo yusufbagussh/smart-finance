@@ -271,13 +271,88 @@
     </div>
 
     {{-- TODO: Tampilkan juga Riwayat Transaksi (investment_transactions) untuk portofolio ini --}}
-    <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+    <div class="mt-8 bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="{ showFilters: {{ request()->hasAny(['filter_asset_id', 'filter_type', 'date_from', 'date_to']) ? 'true' : 'false' }} }">
+
         <div class="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
-            <h5 class="text-lg font-medium text-gray-900 dark:text-white">
-                Transaction History
-            </h5>
+            <div class="flex justify-between items-center">
+                <h5 class="text-lg font-medium text-gray-900 dark:text-white">
+                    Transaction History
+                </h5>
+
+                {{-- Tombol Toggle Filter --}}
+                <button @click="showFilters = !showFilters" type="button"
+                    class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium flex items-center">
+                    <i class="fas fa-filter mr-1"></i>
+                    <span x-text="showFilters ? 'Hide Filters' : 'Show Filters'"></span>
+                </button>
+            </div>
+
+            {{-- Form Filter (Collapsible) --}}
+            <div x-show="showFilters" x-transition class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+
+                <form method="GET" action="{{ route('portfolios.show', $portfolio) }}">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+
+                        {{-- Filter Asset --}}
+                        <div>
+                            <label for="filter_asset_id"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Asset</label>
+                            <select name="filter_asset_id" id="filter_asset_id"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                <option value="">All Assets</option>
+                                @foreach ($filterAssets as $asset)
+                                    <option value="{{ $asset->id }}"
+                                        {{ request('filter_asset_id') == $asset->id ? 'selected' : '' }}>
+                                        {{ $asset->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Filter Type --}}
+                        <div>
+                            <label for="filter_type"
+                                class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                            <select name="filter_type" id="filter_type"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                <option value="">All Types</option>
+                                <option value="buy" {{ request('filter_type') == 'buy' ? 'selected' : '' }}>Buy
+                                </option>
+                                <option value="sell" {{ request('filter_type') == 'sell' ? 'selected' : '' }}>Sell
+                                </option>
+                            </select>
+                        </div>
+
+                        {{-- Filter Date Range --}}
+                        <div class="sm:col-span-1 lg:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Date
+                                Range</label>
+                            <input type="text" id="filter_date_range"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm flatpickr-input dark:text-gray-200"
+                                placeholder="Select dates..."
+                                value="{{ request('date_from') && request('date_to') ? request('date_from') . ' to ' . request('date_to') : '' }}">
+
+                            <input type="hidden" name="date_from" id="date_from"
+                                value="{{ request('date_from') }}">
+                            <input type="hidden" name="date_to" id="date_to" value="{{ request('date_to') }}">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-2 mt-4">
+                        <a href="{{ route('portfolios.show', $portfolio) }}"
+                            class="inline-flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-300 dark:hover:bg-gray-600">
+                            Reset
+                        </a>
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                            Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
+        {{-- Tabel Transaksi --}}
         @if ($transactions->count() > 0)
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
@@ -335,13 +410,11 @@
                                     Rp {{ number_format($tx->total_amount, 0, ',', '.') }}
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium space-x-3">
-                                    {{-- Tombol Ubah (Edit) --}}
                                     <a href="{{ route('investment-transactions.edit', $tx) }}"
                                         class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                                         title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    {{-- Tombol Hapus (Delete) --}}
                                     <form method="POST" action="{{ route('investment-transactions.destroy', $tx) }}"
                                         class="inline delete-form">
                                         @csrf
@@ -358,9 +431,14 @@
                     </tbody>
                 </table>
             </div>
+
+            {{-- Pagination Links --}}
+            <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+                {{ $transactions->appends(request()->except('page'))->links() }}
+            </div>
         @else
             <div class="p-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                No transaction history for this portfolio yet.
+                No transaction history found matching your filters.
             </div>
         @endif
     </div>
@@ -388,6 +466,26 @@
                         })
                     });
                 });
+            });
+
+            flatpickr("#filter_date_range", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "M d, Y",
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        document.getElementById('date_from').value = instance.formatDate(selectedDates[0], "Y-m-d");
+                        document.getElementById('date_to').value = instance.formatDate(selectedDates[1], "Y-m-d");
+                    } else if (selectedDates.length === 0) {
+                        document.getElementById('date_from').value = '';
+                        document.getElementById('date_to').value = '';
+                    }
+                },
+                defaultDate: [
+                    document.getElementById('date_from').value,
+                    document.getElementById('date_to').value
+                ].filter(d => d)
             });
         </script>
     @endpush

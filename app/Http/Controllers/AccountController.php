@@ -9,10 +9,18 @@ use Illuminate\Support\Facades\Auth;
 class AccountController extends Controller
 {
     // Tampilkan semua akun
-    public function index()
+    public function index(Request $request)
     {
-        $accounts = Auth::user()->accounts()->orderBy('name')->get();
-        // Hitung total saldo dari semua akun
+        $query = Auth::user()->accounts();
+
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $accounts = $query->orderBy('name')->get();
         $totalBalance = $accounts->sum('current_balance');
 
         return view('accounts.index', compact('accounts', 'totalBalance'));

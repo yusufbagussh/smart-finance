@@ -193,7 +193,7 @@ class PortfolioController extends Controller
     //     ]);
     // }
 
-    public function show(Portfolio $portfolio)
+    public function show(Request $request, Portfolio $portfolio)
     {
         $user = auth()->user();
 
@@ -201,10 +201,39 @@ class PortfolioController extends Controller
         $summary = $this->portfolioService->calculatePortfolioSummary($portfolio);
 
         // 2. Riwayat Transaksi (Sudah ada)
-        $transactions = $portfolio->investmentTransactions()
+        $query = $portfolio->investmentTransactions()->with('asset');
+
+        // Filter by Asset
+        if ($request->filled('filter_asset_id')) {
+            $query->where('asset_id', $request->filter_asset_id);
+        }
+
+        // Filter by Type (Buy/Sell)
+        if ($request->filled('filter_type')) {
+            $query->where('transaction_type', $request->filter_type);
+        }
+
+        // Filter by Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('transaction_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('transaction_date', '<=', $request->date_to);
+        }
+
+        // Ambil data dengan Pagination
+        $transactions = $query->orderBy('transaction_date', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15); // Gunakan paginate, bukan get()
+
+        // 3. Data Pendukung untuk Dropdown Filter
+        // Ambil daftar aset yang PERNAH ditransaksikan di portofolio ini
+        $filterAssets = $portfolio->investmentTransactions()
             ->with('asset')
-            ->orderBy('transaction_date', 'desc')
-            ->get();
+            ->get()
+            ->pluck('asset')
+            ->unique('id')
+            ->sortBy('name');
 
         // --- 3. LOGIKA ANALISIS AI DENGAN CACHE ---
         $cacheKey = "portfolio_analysis_user_{$user->id}_portfolio_{$portfolio->id}";
@@ -373,6 +402,7 @@ class PortfolioController extends Controller
             'totals' => $summary, // Kirim semua data total
             'transactions' => $transactions,
             'geminiAnalysisText' => $geminiAnalysisText,
+            'filterAssets' => $filterAssets,
         ]);
     }
 
