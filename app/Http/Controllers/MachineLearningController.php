@@ -16,24 +16,6 @@ use Illuminate\Support\Facades\Log;
 class MachineLearningController extends Controller
 {
     private ?string $mlBaseUrl = null;
-    // public function index()
-    // {
-    //     $user = auth()->user();
-    //     // Mock classification accuracy
-    //     $classificationStats = [
-    //         'total_transactions' => $user->transactions()->count(),
-    //         'auto_classified' => rand(60, 85),
-    //         'accuracy_rate' => rand(85, 95),
-    //     ];
-
-    //     // Mock prediction data
-    //     $predictions = $this->getMockPredictions();
-
-    //     // Mock recommendations
-    //     $recommendations = $this->getMockRecommendations();
-
-    //     return view('ml.index', compact('classificationStats', 'predictions', 'recommendations'));
-    // }
 
     public function __construct()
     {
@@ -43,22 +25,20 @@ class MachineLearningController extends Controller
     public function index()
     {
         $user = auth()->user();
-        $currentMonth = "2025-10"; //now()->format('Y-m');
+        $currentMonth = "2025-10"; // Dapat dikembalikan ke now()->format('Y-m') jika sudah siap
         $currentYear = now()->year;
         $currentMonthNum = now()->month;
 
-        // --- 1. Classification Stats (Disederhanakan) ---
+        // --- 1. Classification Stats ---
         $classificationStats = [
             'total_transactions' => $user
                 ->transactions()->whereNull('investment_transaction_id')->count(),
-            // Kita hapus mock accuracy, ganti dengan info model
             'model_info' => 'Model Naive Bayes dilatih pada data Anda.',
         ];
 
         // --- 2. Fetch Actual Next Month Prediction ---
-        $nextMonthPredictionSummary = "N/A"; // Default
+        $nextMonthPredictionSummary = "N/A";
 
-        // Ambil data pengeluaran harian (sama seperti di predictions())
         $dailySpending = $user->transactions()
             ->where('type', 'expense')
             ->whereNull('investment_transaction_id')
@@ -67,11 +47,10 @@ class MachineLearningController extends Controller
             ->orderBy('date', 'asc')
             ->get();
 
-        if ($dailySpending->count() > 10) { // Hanya panggil jika data cukup
+        if ($dailySpending->count() > 10) {
             try {
                 $responsePredict = Http::timeout(15)->post($this->mlBaseUrl . '/predict', $dailySpending);
                 if ($responsePredict->successful()) {
-                    // Ambil HANYA total prediksi
                     $nextMonthPredictionSummary = $responsePredict->json('next_month_total', 'Error');
                 } else {
                     Log::error('Python API /predict call failed from ml.index: ' . $responsePredict->status());
@@ -85,23 +64,23 @@ class MachineLearningController extends Controller
             $nextMonthPredictionSummary = "Data Kurang";
         }
 
-
         // --- 3. Fetch Actual Recommendations (Preview) ---
-        $recommendationPreview = [['type' => 'info', 'message' => 'Analisis sedang berjalan...']]; // Default
+        $recommendationPreview = [['type' => 'info', 'message' => 'Analisis sedang berjalan...']];
 
-        // Ambil Anggaran & Hitung Summary (Kita butuh summary untuk Gemini)
         $currentMonthBudgets = $user->budgets()
             ->with('category')
             ->where('month', $currentMonth)
             ->get();
         $totalBudgetLimit = $currentMonthBudgets->sum('limit');
-        $monthlyExpense = $user->transactions() // Ambil total expense bulan ini
+
+        $monthlyExpense = $user->transactions()
             ->expense()
             ->whereYear('date', $currentYear)
             ->whereNull('investment_transaction_id')
             ->whereMonth('date', $currentMonthNum)
             ->sum('amount');
-        $monthlyIncome = $user->transactions() // Ambil total income bulan ini
+
+        $monthlyIncome = $user->transactions()
             ->income()
             ->whereYear('date', $currentYear)
             ->whereNull('investment_transaction_id')
@@ -113,27 +92,31 @@ class MachineLearningController extends Controller
             $budgetProgress = ($monthlyExpense / $totalBudgetLimit) * 100;
             $budgetRemaining = $totalBudgetLimit - $monthlyExpense;
             $isOverBudget = $monthlyExpense > $totalBudgetLimit;
-            $budgetSummary = (object) ['limit' => $totalBudgetLimit, 'spent' => $monthlyExpense, 'remaining' => $budgetRemaining, 'progress' => $budgetProgress, 'isOverBudget' => $isOverBudget];
+            $budgetSummary = (object) [
+                'limit' => $totalBudgetLimit,
+                'spent' => $monthlyExpense,
+                'remaining' => $budgetRemaining,
+                'progress' => $budgetProgress,
+                'isOverBudget' => $isOverBudget
+            ];
         }
 
-        // Ambil Transaksi (untuk Python)
         $transactions = $user->transactions()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
             ->whereNull('investment_transaction_id')
-            ->with('category') // Eager load category
+            ->with('category')
             ->get(['description', 'category_id', 'amount', 'type', 'date']);
 
-        // Payload untuk Python API
         $payload = [
-            'budgets' => $currentMonthBudgets->map(function ($b) { // Map data budget
+            'budgets' => $currentMonthBudgets->map(function ($b) {
                 return [
                     'category' => $b->category->name ?? 'Uncategorized',
                     'budget' => $b->limit,
-                    'spent' => $b->spent // Asumsi spent sudah di-update
+                    'spent' => $b->spent
                 ];
             }),
-            'transactions' => $transactions->map(function ($t) { // Map data transaksi
+            'transactions' => $transactions->map(function ($t) {
                 return [
                     'description' => $t->description,
                     'category' => $t->category->name ?? 'Uncategorized',
@@ -144,15 +127,12 @@ class MachineLearningController extends Controller
             })
         ];
 
-        // Panggil API Python
-        $pythonInsights = [];
         try {
             $responsePython = Http::timeout(15)->post($this->mlBaseUrl . '/recommend', $payload);
             if ($responsePython->successful()) {
                 $pythonInsights = $responsePython->json('insights', []);
-                // Ambil 1-2 insight pertama untuk preview
                 $recommendationPreview = array_slice($pythonInsights, 0, 2);
-                if (empty($recommendationPreview)) { // Jika Python tidak mengembalikan apa2
+                if (empty($recommendationPreview)) {
                     $recommendationPreview = [['type' => 'info', 'message' => 'Tidak ada rekomendasi spesifik saat ini.']];
                 }
             } else {
@@ -164,13 +144,10 @@ class MachineLearningController extends Controller
             $recommendationPreview = [['type' => 'error', 'message' => 'Gagal terhubung ke layanan rekomendasi.']];
         }
 
-        // Kita tidak panggil Gemini di sini agar halaman index cepat
-
-        // --- Kirim Data ke View ---
         return view('ml.index', compact(
             'classificationStats',
-            'nextMonthPredictionSummary', // Ganti nama variabel
-            'recommendationPreview'       // Ganti nama variabel
+            'nextMonthPredictionSummary',
+            'recommendationPreview'
         ));
     }
 
@@ -181,137 +158,103 @@ class MachineLearningController extends Controller
             return response()->json(['error' => 'Description cannot be empty'], 400);
         }
 
-        $startTime = microtime(true); // Catat waktu mulai
+        $startTime = microtime(true);
         try {
-            // 1. Panggil API Python (Flask)
             $response = Http::post($this->mlBaseUrl . '/classify', [
                 'description' => $description,
             ]);
 
-            $duration = round((microtime(true) - $startTime) * 1000); // Hitung durasi (ms)
+            $duration = round((microtime(true) - $startTime) * 1000);
 
-            // 2. Periksa apakah panggilan API sukses
             if ($response->successful()) {
                 $mlResult = $response->json();
 
-                // 3. Dapatkan nama kategori & tipe dari hasil ML
                 $suggestedCategoryName = $mlResult['predicted_category'] ?? 'Other Expense';
-                $predictedType = $mlResult['predicted_type'] ?? 'expense'; // Default ke expense jika gagal
+                $predictedType = $mlResult['predicted_type'] ?? 'expense';
 
-                // Simpan metrik ke cache
                 $this->storeMetric('classify_latency', $duration);
                 $this->storeMetric('classify_confidence_cat', $mlResult['confidence_category'] ?? 0);
                 $this->storeMetric('classify_confidence_type', $mlResult['confidence_type'] ?? 0);
 
-                // 4. Cari Category ID di database Laravel berdasarkan nama
                 $category = Category::where('name', $suggestedCategoryName)->first();
 
-                // 5. Kembalikan JSON ke frontend (create.blade.php)
                 return response()->json([
-                    'suggested_category_id' => $category ? $category->category_id : null, // Ganti ke category_id
-                    'predicted_category' => $suggestedCategoryName,
-                    'confidence_category' => $mlResult['confidence_category'] ?? 0,
-                    'predicted_type' => $predictedType,              // <-- Kirim tipe
-                    'confidence_type' => $mlResult['confidence_type'] ?? 0, // <-- Kirim confidence tipe
-                    'explanation' => $mlResult['explanation'] ?? 'Classification failed.',
+                    'suggested_category_id' => $category ? $category->category_id : null,
+                    'predicted_category'    => $suggestedCategoryName,
+                    'confidence_category'   => $mlResult['confidence_category'] ?? 0,
+                    'predicted_type'        => $predictedType,
+                    'confidence_type'       => $mlResult['confidence_type'] ?? 0,
+                    'explanation'           => $mlResult['explanation'] ?? 'Classification failed.',
                 ]);
             } else {
                 Log::error('ML API Classification Failed: ' . $response->body());
-                Cache::increment('ml_classify_errors'); // Hitung error                // Jika API error, kirim response error tapi jangan crash
+                Cache::increment('ml_classify_errors');
                 return response()->json([
                     'error' => 'Classification service error.',
                     'suggested_category_id' => null,
-                    'predicted_type' => 'expense', // Default
-                ], 500); // Kirim status 500
+                    'predicted_type' => 'expense',
+                ], 500);
             }
         } catch (\Exception $e) {
-            Log::error('ML API Connection Failed: ' + $e->getMessage());
-            Cache::increment('ml_classify_errors'); // Hitung error
+            Log::error('ML API Connection Failed: ' . $e->getMessage());
+            Cache::increment('ml_classify_errors');
             return response()->json([
                 'error' => 'Could not connect to classification service.',
                 'suggested_category_id' => null,
-                'predicted_type' => 'expense', // Default
-            ], 500); // Kirim status 500
+                'predicted_type' => 'expense',
+            ], 500);
         }
     }
 
-    // public function predictions()
-    // {
-    //     $predictions = $this->getMockPredictions();
-    //     return view('ml.predictions', compact('predictions'));
-    // }
-
     public function predictions()
     {
-        // --- LOGIKA BARU YANG LEBIH EFISIEN ---
-
-        // 1. Ambil riwayat transaksi, TAPI SUDAH DI-AGREGASI (DIJUMLAHKAN) PER HARI
-        // Query ini meminta database untuk:
-        // - Mengambil HANYA PENGELUARAN (expense)
-        // - Mengelompokkannya berdasarkan TANGGAL (GROUP BY date)
-        // - Menjumlahkan total 'amount' untuk setiap hari itu (SUM(amount))
-
         $dailySpending = auth()->user()->transactions()
             ->where('type', 'expense')
             ->whereNull('investment_transaction_id')
-            // 'DATE(date)' -> memastikan kita mengabaikan jam/menit/detik
             ->selectRaw('DATE(date) as date, SUM(amount) as amount')
-            ->groupBy('date') // Ini adalah kunci efisiensinya
+            ->groupBy('date')
             ->orderBy('date', 'asc')
             ->get()
-            ->toArray(); // Hasilnya: [{date: '2025-01-01', amount: 150000}, {date: '2025-01-02', amount: 75000}, ...]
-        // Dengan cara ini, bahkan jika Anda punya 100.000 transaksi
-        // selama 3 tahun, Anda hanya akan mengirim ~1095 baris data (365 hari * 3).
-        // Ini SANGAT ringan dan cepat.
+            ->toArray();
 
         $forecastData = [];
         $nextMonthPrediction = "Rp 0";
-        // Hanya panggil API jika user punya data (misal: lebih dari 10 hari transaksi)
+
         if (count($dailySpending) > 10) {
-            $startTime = microtime(true); // Catat waktu mulai
+            $startTime = microtime(true);
             try {
-                // 2. Panggil API Python /predict dengan data yang SUDAH DIJUMLAHKAN
-                $response = Http::post($this->mlBaseUrl . '/predict', $dailySpending); // $dailySpending, BUKAN $transactions
-                $duration = round((microtime(true) - $startTime) * 1000); // Hitung durasi (ms)
+                $response = Http::post($this->mlBaseUrl . '/predict', $dailySpending);
+                $duration = round((microtime(true) - $startTime) * 1000);
                 $this->storeMetric('predict_latency', $duration);
-                // dd($response->json());
+
                 if ($response->successful()) {
                     $data = $response->json();
                     $forecastData = $data['forecast_data'] ?? [];
                     $nextMonthPrediction = $data['next_month_total'] ?? "Error";
                 } else {
-                    Cache::increment('ml_predict_errors'); // Hitung error
+                    Cache::increment('ml_predict_errors');
                     $nextMonthPrediction = "Error: Service not responding";
                 }
             } catch (\Exception $e) {
-                Cache::increment('ml_predict_errors'); // Hitung error
+                Cache::increment('ml_predict_errors');
                 $nextMonthPrediction = "Error: " . $e->getMessage();
             }
         } else {
             $nextMonthPrediction = "Butuh lebih banyak data transaksi untuk prediksi.";
         }
 
-        // 3. Kirim data ke view
         return view('ml.predictions', [
             'forecastData' => $forecastData,
             'nextMonthPrediction' => $nextMonthPrediction
         ]);
     }
 
-    // public function recommendations()
-    // {
-    //     $recommendations = $this->getMockRecommendations();
-    //     return view('ml.recommendations', compact('recommendations'));
-    // }
-
     public function recommendations()
     {
         $user = auth()->user();
-        $cacheKey = "recommendations_user_{$user->id}"; // <-- 2. Buat kunci unik
+        $cacheKey = "recommendations_user_{$user->id}";
 
-        // 3. Cek cache. Jika ada, langsung kembalikan.
         if (Cache::has($cacheKey)) {
-            // Ambil data dari cache
             $cachedData = Cache::get($cacheKey);
             if ($cachedData['geminiRecommendationText'] == "Maaf, ringkasan AI tidak dapat dimuat saat ini.") {
                 $this->clearPortfolioCache($user->id);
@@ -323,51 +266,40 @@ class MachineLearningController extends Controller
             }
         }
 
-        // 1. Tentukan bulan ini
-        // $currentMonth = now()->format('Y-m');
         $currentMonth = '2025-10';
         $currentYear = now()->year;
-        // $currentMonthNum = now()->month;
         $currentMonthNum = 10;
 
-        // A. Pemasukan (Gaji, dll - BUKAN dari jual aset)
         $monthlyEarnedIncome = $user->transactions()
             ->income()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->whereNull('investment_transaction_id')
             ->sum('amount');
 
-        // B. Pengeluaran (Konsumtif - BUKAN untuk beli aset)
         $monthlySpending = $user->transactions()
             ->expense()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->whereNull('investment_transaction_id')
             ->sum('amount');
 
-        // C. Pembelian Investasi (Uang keluar untuk aset)
         $monthlyInvestmentPurchase = $user->transactions()
             ->expense()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->whereNotNull('investment_transaction_id') // <-- Kunci
+            ->whereNotNull('investment_transaction_id')
             ->sum('amount');
 
-        // D. Penjualan Investasi (Uang masuk dari aset)
         $monthlyInvestmentSale = $user->transactions()
             ->income()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->whereNotNull('investment_transaction_id') // <-- Kunci
+            ->whereNotNull('investment_transaction_id')
             ->sum('amount');
 
-        // Hitung "Cash Flow" bersih (Pemasukan - Pengeluaran Konsumtif)
         $netCashFlow = $monthlyEarnedIncome - $monthlySpending;
 
-        // Ambil Anggaran & Hitung Summary
-        // $currentMonth = now()->format('Y-m');
-        $currentMonth = '2025-10';
         $currentMonthBudgets = $user->budgets()
             ->with('category')
             ->where('month', $currentMonth)
@@ -376,82 +308,65 @@ class MachineLearningController extends Controller
 
         $budgetSummary = null;
         if ($totalBudgetLimit > 0) {
-            // --- PERUBAHAN 2: Gunakan $monthlySpending untuk budget ---
-            // Budget sekarang HANYA melacak pengeluaran konsumtif
             $budgetProgress = ($monthlySpending / $totalBudgetLimit) * 100;
             $budgetRemaining = $totalBudgetLimit - $monthlySpending;
             $isOverBudget = $monthlySpending > $totalBudgetLimit;
             $budgetSummary = (object) [
-                'limit' => $totalBudgetLimit,
-                'spent' => $monthlySpending, // <-- Diperbarui
-                'remaining' => $budgetRemaining,
-                'progress' => $budgetProgress,
+                'limit'        => $totalBudgetLimit,
+                'spent'        => $monthlySpending,
+                'remaining'    => $budgetRemaining,
+                'progress'     => $budgetProgress,
                 'isOverBudget' => $isOverBudget
             ];
         }
 
-        // --- PERUBAHAN 3: Ambil Transaksi (HANYA KONSUMTIF) untuk Python ---
         $consumptiveTransactions = $user->transactions()
             ->whereYear('date', $currentYear)
             ->whereMonth('date', $currentMonthNum)
-            ->whereNull('investment_transaction_id') // <-- Kunci
+            ->whereNull('investment_transaction_id')
             ->with('category')
             ->get(['description', 'category_id', 'amount', 'type', 'date']);
 
-        // Payload untuk Python API (Sekarang hanya berisi data konsumtif)
         $payload = [
             'budgets' => $currentMonthBudgets->map(function ($b) {
-                // Asumsi $b->spent sudah di-load dengan benar oleh model Budget Anda
                 return [
                     'category' => $b->category->name ?? 'Uncategorized',
-                    'budget' => $b->limit,
-                    'spent' => $b->spent
+                    'budget'   => $b->limit,
+                    'spent'    => $b->spent
                 ];
             }),
-            'transactions' => $consumptiveTransactions->map(function ($t) { // <-- Diperbarui
+            'transactions' => $consumptiveTransactions->map(function ($t) {
                 return [
                     'description' => $t->description,
-                    'category' => $t->category->name ?? 'Uncategorized',
-                    'amount' => $t->amount,
-                    'type' => $t->type,
-                    'date' => $t->date,
+                    'category'    => $t->category->name ?? 'Uncategorized',
+                    'amount'      => $t->amount,
+                    'type'        => $t->type,
+                    'date'        => $t->date,
                 ];
             })
         ];
-        // dd($payload);
 
-        // 7. Panggil API Python /recommend
-        $pythonInsights = []; // Default jika Python gagal
+        $pythonInsights = [];
         $pythonStartTime = microtime(true);
         try {
             $responsePython = Http::post($this->mlBaseUrl . '/recommend', $payload);
-            $this->storeMetric('recommend_python_latency', round((microtime(true) - $pythonStartTime) * 1000)); // Simpan durasi
+            $this->storeMetric('recommend_python_latency', round((microtime(true) - $pythonStartTime) * 1000));
             if ($responsePython->successful()) {
                 $pythonInsights = $responsePython->json('insights', []);
-                $this->storeMetric('recommend_python_latency', round((microtime(true) - $pythonStartTime) * 1000)); // Simpan durasi
             } else {
                 Log::error('Python API /recommend failed: ' . $responsePython->status() . ' - ' . $responsePython->body());
-                Cache::increment('ml_recommend_python_errors'); // Hitung error
+                Cache::increment('ml_recommend_python_errors');
             }
         } catch (\Exception $e) {
             Log::error('Python API /recommend connection failed: ' . $e->getMessage());
             Cache::increment('ml_recommend_python_errors');
         }
 
-        // // 8. Kirim data ke view
-        // return view('ml.recommendations', [
-        //     'recommendations' => $recommendations
-        // ]);
-
-        // --- !! LANGKAH BARU: PANGGIL GEMINI API !! ---
-        // --- Langkah 8: Panggil Gemini API (dengan Prompt yang Diperkaya) ---
-        $geminiRecommendationText = "Maaf, ringkasan AI tidak dapat dimuat saat ini."; // Default
+        $geminiRecommendationText = "Maaf, ringkasan AI tidak dapat dimuat saat ini.";
         $geminiStartTime = microtime(true);
-        $apiKey = env('GEMINI_API_KEY'); // Ambil dari config atau .env
-        if ($apiKey) { // Hanya panggil jika API key ada
-            // $apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=' . $apiKey;
+        $apiKey = env('GEMINI_API_KEY');
 
-            // Buat Prompt yang Diperkaya
+        if ($apiKey) {
             $prompt = "Anda adalah asisten keuangan pribadi yang ramah dan memotivasi untuk aplikasi Smart Finance.\n\n";
             $prompt .= "Berikut ringkasan kondisi keuangan pengguna bulan ini:\n";
             $prompt .= "- Total Pemasukan (Gaji, dll): Rp " . number_format($monthlyEarnedIncome, 0, ',', '.') . "\n";
@@ -486,40 +401,34 @@ class MachineLearningController extends Controller
             $prompt .= "4. Jaga agar total respons tetap ringkas (maksimal 5-6 kalimat).\n";
             $prompt .= "5. Format sebagai teks biasa (plain text).\n";
             $prompt .= "Respons Anda:";
-            // dd($prompt);
+
             try {
-                $responseGemini = Gemini::generativeModel(model: 'gemini-2.0-flash')->generateContent($prompt); // Sesuaikan model jika perlu (geminiPro(), etc.)                dd($responseGemini->json());
-                $this->storeMetric('recommend_gemini_latency', round((microtime(true) - $geminiStartTime) * 1000)); // Simpan durasi
+                $responseGemini = Gemini::generativeModel(model: 'gemini-2.0-flash')->generateContent($prompt);
+                $this->storeMetric('recommend_gemini_latency', round((microtime(true) - $geminiStartTime) * 1000));
+
                 if ($responseGemini->text()) {
                     $geminiRecommendationText = $responseGemini->text();
-                    // Ekstrak teks dari respons Gemini
-                    // $geminiRecommendationText = $responseGemini->json('candidates.0.content.parts.0.text', $geminiRecommendationText);
                 } else {
                     Log::error('Gemini API call failed: ' . json_encode($responseGemini));
                     Cache::increment('ml_recommend_gemini_errors');
-                    // Jika Gemini gagal, gunakan pesan default atau mungkin hanya insight Python
-                    // Untuk sekarang, kita biarkan pakai default message.
                 }
             } catch (\Exception $e) {
                 Log::error('Gemini API connection failed: ' . $e->getMessage());
                 Cache::increment('ml_recommend_gemini_errors');
-                // Jika koneksi gagal, gunakan pesan default
             }
         } else {
             Log::warning('GEMINI_API_KEY not set. Skipping Gemini call.');
             $geminiRecommendationText = "Ringkasan AI dinonaktifkan. Silakan periksa wawasan detail di bawah.";
         }
-        // dd($geminiRecommendationText);
+
         Cache::put($cacheKey, [
             'geminiRecommendationText' => $geminiRecommendationText,
             'pythonInsights' => $pythonInsights
-        ], now()->addHours(6)); // Simpan selama 6 jam
+        ], now()->addHours(6));
 
-        // --- !! AKHIR LANGKAH GEMINI !! ---
-        // 8. Kirim Teks Final dari Gemini ke View
         return view('ml.recommendations', [
-            'geminiRecommendationText' => $geminiRecommendationText, // Teks dari Gemini
-            'pythonInsights' => $pythonInsights                   // Array wawasan dari Python
+            'geminiRecommendationText' => $geminiRecommendationText,
+            'pythonInsights' => $pythonInsights
         ]);
     }
 
@@ -536,32 +445,33 @@ class MachineLearningController extends Controller
         $user = auth()->user();
         $currentMonth = now();
 
-        // Calculate average monthly expense for last 3 months
         $averageExpense = 0;
         for ($i = 1; $i <= 3; $i++) {
-            $month = $currentMonth->copy()->subMonths($i)->format('Y-m');
+            $date = $currentMonth->copy()->subMonths($i);
+
+            // REFRACTORED: Menggunakan whereYear & whereMonth agar mendukung MySQL dan PostgreSQL
             $monthExpense = $user->transactions()
                 ->expense()
-                ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$month])
+                ->whereYear('date', $date->year)
+                ->whereMonth('date', $date->month)
                 ->sum('amount');
+
             $averageExpense += $monthExpense;
         }
         $averageExpense = $averageExpense / 3;
 
-        // Mock predictions for next 3 months
         $predictions = [];
         for ($i = 1; $i <= 3; $i++) {
             $predictedMonth = $currentMonth->copy()->addMonths($i);
 
-            // Add some randomness to make it realistic
-            $variance = rand(-20, 20) / 100; // ±20%
+            $variance = rand(-20, 20) / 100;
             $predictedAmount = $averageExpense * (1 + $variance);
 
             $predictions[] = [
-                'month' => $predictedMonth->format('M Y'),
+                'month'             => $predictedMonth->format('M Y'),
                 'predicted_expense' => $predictedAmount,
-                'confidence' => rand(75, 90),
-                'trend' => $variance > 0 ? 'increase' : 'decrease',
+                'confidence'        => rand(75, 90),
+                'trend'             => $variance > 0 ? 'increase' : 'decrease',
             ];
         }
 
@@ -571,12 +481,13 @@ class MachineLearningController extends Controller
     private function getMockRecommendations()
     {
         $user = auth()->user();
+        $now = now();
 
-        // Get current month expenses by category
-        $currentMonth = now()->format('Y-m');
+        // REFRACTORED: Menggunakan whereYear & whereMonth agar mendukung MySQL dan PostgreSQL
         $categoryExpenses = $user->transactions()
             ->expense()
-            ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
+            ->whereYear('date', $now->year)
+            ->whereMonth('date', $now->month)
             ->selectRaw('category_id, SUM(amount) as total')
             ->groupBy('category_id')
             ->with('category')
@@ -584,30 +495,28 @@ class MachineLearningController extends Controller
 
         $recommendations = [];
 
-        // Mock recommendations based on spending patterns
         foreach ($categoryExpenses as $expense) {
-            if ($expense->total > 1000000) { // If spending > 1M IDR
+            if ($expense->total > 1000000) {
                 $recommendations[] = [
-                    'type' => 'reduce_spending',
-                    'category' => $expense->category->name,
-                    'current_amount' => $expense->total,
-                    'suggested_amount' => $expense->total * 0.8,
+                    'type'              => 'reduce_spending',
+                    'category'          => $expense->category->name,
+                    'current_amount'    => $expense->total,
+                    'suggested_amount'  => $expense->total * 0.8,
                     'potential_savings' => $expense->total * 0.2,
-                    'tips' => $this->getTipsForCategory($expense->category->name),
-                    'priority' => $expense->total > 2000000 ? 'high' : 'medium',
+                    'tips'               => $this->getTipsForCategory($expense->category->name),
+                    'priority'          => $expense->total > 2000000 ? 'high' : 'medium',
                 ];
             }
         }
 
-        // Add general recommendations
         $recommendations[] = [
-            'type' => 'emergency_fund',
-            'category' => 'Savings',
-            'current_amount' => 0,
-            'suggested_amount' => $user->totalIncome() * 0.1,
+            'type'              => 'emergency_fund',
+            'category'          => 'Savings',
+            'current_amount'    => 0,
+            'suggested_amount'  => $user->totalIncome() * 0.1,
             'potential_savings' => $user->totalIncome() * 0.1,
-            'tips' => ['Set up automatic savings', 'Aim for 3-6 months of expenses', 'Use high-yield savings account'],
-            'priority' => 'high',
+            'tips'               => ['Set up automatic savings', 'Aim for 3-6 months of expenses', 'Use high-yield savings account'],
+            'priority'          => 'high',
         ];
 
         return $recommendations;
@@ -645,19 +554,13 @@ class MachineLearningController extends Controller
         return $tips[$categoryName] ?? ['Review your spending in this category', 'Set a monthly budget limit', 'Track expenses regularly'];
     }
 
-    /**
-     * Helper function to store metrics in cache.
-     * Menyimpan 100 data terakhir untuk dihitung rata-ratanya.
-     */
     private function storeMetric(string $key, $value)
     {
-        // Simpan selama 24 jam (1440 menit)
         $expiry = 1440 * 60;
 
         $data = Cache::get($key, []);
         $data[] = $value;
 
-        // Hanya simpan 100 data terakhir
         if (count($data) > 100) {
             $data = array_slice($data, -100);
         }

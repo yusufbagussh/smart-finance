@@ -16,7 +16,7 @@ class DashboardController extends Controller
 {
     protected $portfolioService;
 
-    // 2. INJECT SERVICE VIA CONSTRUCTOR
+    // INJECT SERVICE VIA CONSTRUCTOR
     public function __construct(PortfolioService $portfolioService)
     {
         $this->portfolioService = $portfolioService;
@@ -25,14 +25,19 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
-        $currentMonth = now()->format('Y-m');
 
-        // --- FILTER & DATE RANGE LOGIC START (Tidak berubah) ---
+        // Ambil komponen tahun dan bulan secara terpisah
+        $now = now();
+        $currentYear = $now->year;
+        $currentMonthNumber = $now->month;
+        $currentMonth = $now->format('Y-m'); // Tetap digunakan untuk query string 'YYYY-MM' di tabel budget
+
+        // --- FILTER & DATE RANGE LOGIC ---
         $filter = $request->input('filter', 'daily');
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to');
 
-        // --- 3. HITUNG TOTAL INVESTASI (LOGIKA BARU) ---
+        // --- HITUNG TOTAL INVESTASI ---
         $portfolios = $user->portfolios;
         $totalInvestmentValue = 0;
         foreach ($portfolios as $portfolio) {
@@ -44,39 +49,35 @@ class DashboardController extends Controller
         $totalIncome = $user->totalIncome();
         $totalExpense = $user->totalExpense();
 
-        //HITUNG TOTAL LIABILITAS (Hutang)
-        // 1. Ambil Total Hutang (Kewajiban)
-        $totalPayables = Auth::user()->liabilities()
+        // HITUNG TOTAL LIABILITAS (Hutang & Piutang)
+        $totalPayables = auth()->user()->liabilities()
             ->where('type', 'payable')
             ->sum('current_balance');
 
-        // 2. Ambil Total Piutang (Aset)
-        $totalReceivables = Auth::user()->liabilities()
+        $totalReceivables = auth()->user()->liabilities()
             ->where('type', 'receivable')
             ->sum('current_balance');
 
-        // Saldo ini sekarang adalah Saldo KAS (Cash Balance)
-        // $currentBalance = $totalIncome - $totalExpense;
+        // Saldo KAS (Cash Balance)
         $currentBalance = $user->accounts()->sum('current_balance');
 
-        // Ini adalah Total Kekayaan Bersih Anda
-        // Cash + Investasi + Piutang (Uang kita di orang) - Hutang (Uang orang di kita)
+        // Total Kekayaan Bersih
         $totalNetWorth = $currentBalance + $totalInvestmentValue + $totalReceivables - $totalPayables;
 
-
-        // Hitung income & expense bulanan (KONSUMTIF)s
+        // Hitung income & expense bulanan (KONSUMTIF)
         $monthlyIncome = $user->transactions()
             ->income()
             ->whereNull('investment_transaction_id')
-            ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNumber)
             ->sum('amount');
 
         $monthlyExpense = $user->transactions()
             ->expense()
             ->whereNull('investment_transaction_id')
-            ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNumber)
             ->sum('amount');
-
 
         // Ambil transaksi KONSUMTIF terbaru
         $recentTransactions = $user->transactions()
@@ -84,38 +85,34 @@ class DashboardController extends Controller
             ->whereNull('investment_transaction_id')
             ->orderBy('date', 'desc')
             ->orderBy('created_at', 'desc')
-            ->limit(5)->get();
+            ->limit(5)
+            ->get();
 
-
-        // --- CHART DATA LOGIC (DIPERBARUI TOTAL) ---
+        // --- CHART DATA LOGIC ---
         $chartLabels = [];
         $chartIncomeData = [];
         $chartExpenseData = [];
         $chartTitle = '';
-        $startDate = null; // Untuk menyimpan tanggal mulai iterasi
-        $endDate = null;   // Untuk menyimpan tanggal akhir iterasi
+        $startDate = null;
+        $endDate = null;
 
-        // Tentukan Tanggal Mulai dan Akhir berdasarkan Filter dan Input
         if ($filter === 'daily') {
             if ($dateFrom && $dateTo) {
                 try {
                     $startDate = Carbon::parse($dateFrom)->startOfDay();
                     $endDate = Carbon::parse($dateTo)->startOfDay();
-                    // Batasi maksimal 30 hari
-                    if ($startDate->diffInDays($endDate) > 29) { // diffInDays(30) itu 31 hari
+                    if ($startDate->diffInDays($endDate) > 29) {
                         $startDate = $endDate->copy()->subDays(29);
                         $chartTitle = 'Daily Trend (Last 30 Days)';
                     } else {
                         $chartTitle = 'Daily Trend (' . $startDate->format('M d') . ' - ' . $endDate->format('M d') . ')';
                     }
                 } catch (\Exception $e) {
-                    // Jika input tanggal tidak valid, fallback ke default 7 hari
                     $endDate = now()->startOfDay();
                     $startDate = now()->subDays(6)->startOfDay();
                     $chartTitle = 'Daily Trend (Last 7 Days)';
                 }
             } else {
-                // Default 7 hari
                 $endDate = now()->startOfDay();
                 $startDate = now()->subDays(6)->startOfDay();
                 $chartTitle = 'Daily Trend (Last 7 Days)';
@@ -126,14 +123,15 @@ class DashboardController extends Controller
                 $dateString = $date->format('Y-m-d');
                 $label = $date->format('D, M d');
 
-                // Query (lebih efisien jika digabung, tapi terpisah lebih mudah dibaca)
                 $income = $user->transactions()->income()
                     ->whereNull('investment_transaction_id')
-                    ->whereDate('date', $dateString)->sum('amount');
+                    ->whereDate('date', $dateString)
+                    ->sum('amount');
 
                 $expense = $user->transactions()->expense()
                     ->whereNull('investment_transaction_id')
-                    ->whereDate('date', $dateString)->sum('amount');
+                    ->whereDate('date', $dateString)
+                    ->sum('amount');
 
                 $chartLabels[] = $label;
                 $chartIncomeData[] = $income;
@@ -142,24 +140,20 @@ class DashboardController extends Controller
         } else { // filter === 'monthly'
             if ($dateFrom && $dateTo) {
                 try {
-                    // Parse sebagai awal bulan
                     $startDate = Carbon::parse($dateFrom)->startOfMonth();
                     $endDate = Carbon::parse($dateTo)->startOfMonth();
-                    // Batasi maksimal 12 bulan
-                    if ($startDate->diffInMonths($endDate) > 11) { // diffInMonths(12) itu 13 bulan
+                    if ($startDate->diffInMonths($endDate) > 11) {
                         $startDate = $endDate->copy()->subMonths(11);
                         $chartTitle = 'Monthly Trend (Last 12 Months)';
                     } else {
                         $chartTitle = 'Monthly Trend (' . $startDate->format('M Y') . ' - ' . $endDate->format('M Y') . ')';
                     }
                 } catch (\Exception $e) {
-                    // Fallback ke default 6 bulan
                     $endDate = now()->startOfMonth();
                     $startDate = now()->subMonths(5)->startOfMonth();
                     $chartTitle = 'Monthly Trend (Last 6 Months)';
                 }
             } else {
-                // Default 6 bulan
                 $endDate = now()->startOfMonth();
                 $startDate = now()->subMonths(5)->startOfMonth();
                 $chartTitle = 'Monthly Trend (Last 6 Months)';
@@ -167,19 +161,20 @@ class DashboardController extends Controller
 
             // Loop Bulanan
             for ($date = $startDate->copy(); $date->lte($endDate); $date->addMonth()) {
-                $monthString = $date->format('Y-m');
                 $label = $date->format('M Y');
 
-                // Query per bulan (gunakan TO_CHAR atau YEAR/MONTH)
-                // Sesuaikan dengan database Anda, TO_CHAR lebih umum tapi bisa lambat
+                // DIBERSIHKAN: Menggunakan whereYear dan whereMonth
                 $income = $user->transactions()->income()
                     ->whereNull('investment_transaction_id')
-                    ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$monthString])->sum('amount');
+                    ->whereYear('date', $date->year)
+                    ->whereMonth('date', $date->month)
+                    ->sum('amount');
 
                 $expense = $user->transactions()->expense()
                     ->whereNull('investment_transaction_id')
-                    ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$monthString])->sum('amount');
-                // Alternatif MySQL/MariaDB: ->whereYear('date', $date->year)->whereMonth('date', $date->month)
+                    ->whereYear('date', $date->year)
+                    ->whereMonth('date', $date->month)
+                    ->sum('amount');
 
                 $chartLabels[] = $label;
                 $chartIncomeData[] = $income;
@@ -187,186 +182,79 @@ class DashboardController extends Controller
             }
         }
 
-
         // Breakdown Kategori (KONSUMTIF)
         $categoryBreakdown = $user->transactions()
             ->expense()
-            ->whereNull('investment_transaction_id') // <-- FILTER
-            ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
+            ->whereNull('investment_transaction_id')
+            ->whereYear('date', $currentYear)
+            ->whereMonth('date', $currentMonthNumber)
             ->select('category_id', DB::raw('SUM(amount) as total'))
-            ->with('category')->groupBy('category_id')
-            ->orderBy('total', 'desc')->get();
+            ->with('category')
+            ->groupBy('category_id')
+            ->orderBy('total', 'desc')
+            ->get();
 
-
-        // Budget (Menggunakan data expense yang sudah bersih)
+        // Budget
         $currentMonthBudgetsQuery = $user->budgets()->with('category')
             ->whereHas('category', function ($query) {
                 $query->where('type', 'expense');
             })
             ->where('month', $currentMonth);
 
-        // Ambil Collectionnya
         $currentMonthBudgets = $currentMonthBudgetsQuery->get();
 
-        // Sort untuk tampilan List (Progress bar tertinggi di atas)
-        // (Kita clone agar sorting tidak mengganggu perhitungan selanjutnya, meski di get() sudah aman)
         $currentMonthBudgetsSorted = $currentMonthBudgets->sortByDesc(function ($budget) {
             if ($budget->limit > 0) return ($budget->spent / $budget->limit) * 100;
             return -1;
         });
 
-        // 2. Hitung Total Limit (Batas Anggaran)
         $totalBudgetLimit = $currentMonthBudgets->sum('limit');
-
         $budgetSummary = null;
 
         if ($totalBudgetLimit > 0) {
-            // 3. [PERBAIKAN UTAMA]
-            // Ambil daftar ID Kategori yang MEMILIKI Budget bulan ini
             $budgetedCategoryIds = $currentMonthBudgets->pluck('category_id')->toArray();
-
-            // 4. Hitung Total Pengeluaran HANYA untuk kategori yang di-budget
             $budgetedExpense = $user->transactions()
                 ->expense()
-                ->whereNull('investment_transaction_id') // Tetap filter investasi
-                ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-                ->whereIn('category_id', $budgetedCategoryIds) // <--- FILTER PENTING
+                ->whereNull('investment_transaction_id')
+                ->whereYear('date', $currentYear)
+                ->whereMonth('date', $currentMonthNumber)
+                ->whereIn('category_id', $budgetedCategoryIds)
                 ->sum('amount');
 
-            // 5. Kalkulasi Status (Gunakan $budgetedExpense, BUKAN $monthlyExpense)
             $budgetProgress = ($budgetedExpense / $totalBudgetLimit) * 100;
             $budgetRemaining = $totalBudgetLimit - $budgetedExpense;
             $isOverBudget = $budgetedExpense > $totalBudgetLimit;
 
             $budgetSummary = (object) [
-                'limit' => $totalBudgetLimit,
-                'spent' => $budgetedExpense, // Yang ditampilkan sekarang adalah pengeluaran yg relevan saja
-                'remaining' => $budgetRemaining,
-                'progress' => $budgetProgress,
+                'limit'        => $totalBudgetLimit,
+                'spent'        => $budgetedExpense,
+                'remaining'    => $budgetRemaining,
+                'progress'     => $budgetProgress,
                 'isOverBudget' => $isOverBudget
             ];
         }
 
         return view('dashboard', [
-            'totalIncome'        => $totalIncome,
-            'totalExpense'       => $totalExpense,
-            'currentBalance'     => $currentBalance,
-            'monthlyIncome'      => $monthlyIncome,
-            'monthlyExpense'     => $monthlyExpense,
+            'totalIncome'          => $totalIncome,
+            'totalExpense'         => $totalExpense,
+            'currentBalance'       => $currentBalance,
+            'monthlyIncome'        => $monthlyIncome,
+            'monthlyExpense'       => $monthlyExpense,
             'totalInvestmentValue' => $totalInvestmentValue,
-            'totalNetWorth'      => $totalNetWorth,
-            'recentTransactions' => $recentTransactions,
-            'categoryBreakdown'  => $categoryBreakdown,
-            'budgetSummary'      => $budgetSummary,
-
-            // !! INI YANG ANDA MINTA !!
-            // Di View namanya '$currentMonthBudgets', tapi isinya diambil dari '$currentMonthBudgetsSorted'
-            'currentMonthBudgets' => $currentMonthBudgetsSorted,
-
-            'chartLabels'        => $chartLabels,
-            'chartIncomeData'    => $chartIncomeData,
-            'chartExpenseData'   => $chartExpenseData,
-            'chartTitle'         => $chartTitle,
-            'filter'             => $filter,
-            'dateFrom'           => $dateFrom,
-            'dateTo'             => $dateTo,
-            // 'totalLiabilities'   => $totalLiabilities, // Jika ada
-            'totalReceivables'   => $totalReceivables, // Jika ada
-            'totalPayables'      => $totalPayables,    // Jika ada
+            'totalNetWorth'        => $totalNetWorth,
+            'recentTransactions'   => $recentTransactions,
+            'categoryBreakdown'    => $categoryBreakdown,
+            'budgetSummary'        => $budgetSummary,
+            'currentMonthBudgets'  => $currentMonthBudgetsSorted,
+            'chartLabels'          => $chartLabels,
+            'chartIncomeData'      => $chartIncomeData,
+            'chartExpenseData'     => $chartExpenseData,
+            'chartTitle'           => $chartTitle,
+            'filter'               => $filter,
+            'dateFrom'             => $dateFrom,
+            'dateTo'               => $dateTo,
+            'totalReceivables'     => $totalReceivables,
+            'totalPayables'        => $totalPayables,
         ]);
     }
-
-    // public function index()
-    // {
-    //     $user = User::with('transactions', 'budgets')->find(Auth::user()->id);
-
-    //     // Basic stats
-    //     $totalIncome = $user->totalIncome();
-    //     $totalExpense = $user->totalExpense();
-    //     $currentBalance = $totalIncome - $totalExpense;
-
-    //     // Current month stats
-    //     $currentMonth = now()->format('Y-m');
-    //     $monthlyIncome = $user->transactions()
-    //         ->income()
-    //         ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-    //         ->sum('amount');
-
-    //     $monthlyExpense = $user->transactions()
-    //         ->expense()
-    //         ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-    //         ->sum('amount');
-
-    //     // Recent transactions
-    //     $recentTransactions = $user->transactions()
-    //         ->with('category')
-    //         ->orderBy('date', 'desc')
-    //         ->orderBy('created_at', 'desc')
-    //         ->limit(5)
-    //         ->get();
-
-    //     // Monthly chart data (last 6 months)
-    //     $monthlyData = [];
-    //     for ($i = 5; $i >= 0; $i--) {
-    //         $month = now()->subMonths($i)->format('Y-m');
-    //         $monthName = now()->subMonths($i)->format('M Y');
-
-    //         $income = $user->transactions()
-    //             ->income()
-    //             ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-    //             ->sum('amount');
-
-    //         $expense = $user->transactions()
-    //             ->expense()
-    //             ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-    //             ->sum('amount');
-
-    //         $monthlyData[] = [
-    //             'month' => $monthName,
-    //             'income' => $income,
-    //             'expense' => $expense,
-    //         ];
-    //     }
-
-    //     // Category breakdown (current month)
-    //     $categoryBreakdown = $user->transactions()
-    //         ->expense()
-    //         ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$currentMonth])
-    //         ->select('category_id', DB::raw('SUM(amount) as total'))
-    //         ->with('category')
-    //         ->groupBy('category_id')
-    //         ->get();
-
-    //     // Current budget
-    //     $currentBudget = $user->budgets()
-    //         ->where('month', $currentMonth)
-    //         ->first();
-
-    //     if ($currentBudget) {
-    //         $currentBudget->updateSpentAmount();
-    //     }
-
-    //     // dd([
-    //     //     'totalIncome' => $totalIncome,
-    //     //     'totalExpense' => $totalExpense,
-    //     //     'currentBalance' => $currentBalance,
-    //     //     'monthlyIncome' => $monthlyIncome,
-    //     //     'monthlyExpense' => $monthlyExpense,
-    //     //     'recentTransactions' => $recentTransactions,
-    //     //     'monthlyData' => $monthlyData,
-    //     //     'categoryBreakdown' => $categoryBreakdown,
-    //     //     'currentBudge' => $currentBudget
-    //     // ]);
-    //     return view('dashboard', compact(
-    //         'totalIncome',
-    //         'totalExpense',
-    //         'currentBalance',
-    //         'monthlyIncome',
-    //         'monthlyExpense',
-    //         'recentTransactions',
-    //         'monthlyData',
-    //         'categoryBreakdown',
-    //         'currentBudget'
-    //     ));
-    // }
 }

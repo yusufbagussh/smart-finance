@@ -45,21 +45,22 @@ class DashboardController extends Controller
         // Monthly Transaction Growth (last 6 months)
         $monthlyGrowth = [];
         for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $monthName = now()->subMonths($i)->format('M Y');
+            $date = now()->subMonths($i);
+            $monthName = $date->format('M Y');
 
+            // REFRACTORED: Menggunakan whereYear & whereMonth agar aman di MySQL maupun PostgreSQL
             $userCount = User::where('role', 'user')
-                ->whereRaw("TO_CHAR(created_at, 'YYYY-MM') = ?", [$month])
-                // ->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
+                ->whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
                 ->count();
 
-            // $transactionCount = Transaction::whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$month])
-            $transactionCount = Transaction::whereRaw("TO_CHAR(created_at, 'YYYY-MM') = ?", [$month])
+            $transactionCount = Transaction::whereYear('created_at', $date->year)
+                ->whereMonth('created_at', $date->month)
                 ->count();
 
             $monthlyGrowth[] = [
-                'month' => $monthName,
-                'users' => $userCount,
+                'month'        => $monthName,
+                'users'        => $userCount,
                 'transactions' => $transactionCount,
             ];
         }

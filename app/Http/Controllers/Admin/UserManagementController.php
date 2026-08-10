@@ -60,27 +60,28 @@ class UserManagementController extends Controller
             ->limit(10)
             ->get();
 
-        // Monthly activity
+        // Monthly activity (last 6 months)
         $monthlyActivity = [];
         for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $monthName = now()->subMonths($i)->format('M Y');
+            $date = now()->subMonths($i);
+            $monthName = $date->format('M Y');
 
+            // REFRACTORED: Menggunakan whereYear & whereMonth agar aman di MySQL dan PostgreSQL
             $income = $user->transactions()
                 ->where('type', 'income')
-                // ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$month])
-                ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$month])
+                ->whereYear('date', $date->year)
+                ->whereMonth('date', $date->month)
                 ->sum('amount');
 
             $expense = $user->transactions()
                 ->where('type', 'expense')
-                // ->whereRaw("DATE_FORMAT(date, '%Y-%m') = ?", [$month])
-                ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$month])
+                ->whereYear('date', $date->year)
+                ->whereMonth('date', $date->month)
                 ->sum('amount');
 
             $monthlyActivity[] = [
-                'month' => $monthName,
-                'income' => $income,
+                'month'   => $monthName,
+                'income'  => $income,
                 'expense' => $expense,
             ];
         }

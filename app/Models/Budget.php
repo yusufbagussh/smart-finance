@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class Budget extends Model
 {
@@ -55,10 +56,15 @@ class Budget extends Model
     // Update spent amount based on transactions
     public function updateSpentAmount()
     {
+        // Parse string 'YYYY-MM' menggunakan Carbon
+        $date = Carbon::createFromFormat('Y-m', $this->month);
+
+        // REFRACTORED: Menggunakan whereYear & whereMonth agar aman di MySQL & PostgreSQL
         $spent = $this->user->transactions()
             ->where('type', 'expense')
             ->where('category_id', $this->category_id)
-            ->whereRaw("TO_CHAR(date, 'YYYY-MM') = ?", [$this->month])
+            ->whereYear('date', $date->year)
+            ->whereMonth('date', $date->month)
             ->sum('amount');
 
         // Gunakan update agar tidak memicu event/observer lain secara tidak sengaja
