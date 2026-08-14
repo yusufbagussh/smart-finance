@@ -122,4 +122,7 @@ Route::middleware(['auth'])->prefix('reports')->name('reports.')->group(function
     Route::post('/preview/transactions', [ReportController::class, 'previewTransactionsPdf'])->name('transactions.preview');
     Route::post('/preview/financial-report', [ReportController::class, 'previewFinancialReportPdf'])->name('financial-report.preview');
 });
+Route::get('/offline', function () {
+    return view('vendor.laravelpwa.offline');
+});
 require __DIR__ . '/auth.php';
