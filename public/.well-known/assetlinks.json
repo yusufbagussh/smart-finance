@@ -1,0 +1,12 @@
+[
+    {
+        "relation": ["delegate_permission/common.handle_all_urls"],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "tech.miraisolution.artafis",
+            "sha256_cert_fingerprints": [
+                "CC:BA:64:9A:FA:50:C2:F0:82:1F:B8:25:6D:DB:78:AD:81:AA:72:DF:E0:92:67:D2:D5:01:71:88:EE:4A:19:4A"
+            ]
+        }
+    }
+]
