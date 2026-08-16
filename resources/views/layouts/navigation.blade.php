@@ -139,144 +139,132 @@
 <nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-            <div class="flex">
+            <div class="flex items-center min-w-0">
+                {{-- Logo / Brand --}}
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}">
-                        <span class="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}"
+                        class="flex items-center">
+                        <span class="text-xl font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">
                             💰 FinanceTracker
-                            @if (auth()->user()->isAdmin())
-                                <span
-                                    class="ml-2 text-xs px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">Admin</span>
-                            @endif
                         </span>
+                        @if (auth()->user()->isAdmin())
+                            <span
+                                class="ml-2 text-xs px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full font-semibold">
+                                Admin
+                            </span>
+                        @endif
                     </a>
                 </div>
 
-                <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
+                {{-- Desktop Navigation Links --}}
+                <div class="hidden space-x-3 md:space-x-4 lg:space-x-6 xl:space-x-8 sm:-my-px sm:ml-6 lg:ml-8 sm:flex">
                     @if (auth()->user()->isAdmin())
-                        {{-- Cek route --}}
-                        @if (request()->routeIs('admin.*'))
+                        @if (request()->routeIs('admin.*', 'assets.*'))
                             {{-- Admin Navigation --}}
-                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('dashboard')">
-                                <i class="fas fa-home mr-2"></i>
+                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                                <i class="fas fa-tachometer-alt mr-1.5"></i>
                                 {{ __('Dashboard') }}
                             </x-nav-link>
                             <x-nav-link :href="route('admin.categories.index')" :active="request()->routeIs('admin.categories.*')">
-                                <i class="fas fa-tags mr-2"></i>
+                                <i class="fas fa-tags mr-1.5"></i>
                                 {{ __('Categories') }}
                             </x-nav-link>
-                            {{-- !! TAMBAHAN 2 (Desktop Admin) !! --}}
                             <x-nav-link :href="route('assets.index')" :active="request()->routeIs('assets.*')">
-                                <i class="fas fa-gem mr-2"></i>
+                                <i class="fas fa-gem mr-1.5"></i>
                                 {{ __('Assets') }}
                             </x-nav-link>
                             <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
-                                <i class="fas fa-users mr-2"></i>
+                                <i class="fas fa-users mr-1.5"></i>
                                 {{ __('Users') }}
                             </x-nav-link>
                             <x-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
-                                <i class="fas fa-heartbeat mr-2"></i>
+                                <i class="fas fa-heartbeat mr-1.5"></i>
                                 {{ __('Monitoring') }}
                             </x-nav-link>
                             <x-nav-link :href="route('dashboard')" :active="false">
-                                <i class="fas fa-eye mr-2"></i>
+                                <i class="fas fa-eye mr-1.5"></i>
                                 {{ __('User View') }}
                             </x-nav-link>
                         @else
-                            {{-- User Navigation (untuk Admin) --}}
+                            {{-- User Navigation (untuk Admin saat berada di mode user) --}}
                             <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                                <i class="fas fa-home mr-2"></i>
+                                <i class="fas fa-home mr-1.5"></i>
                                 {{ __('Dashboard') }}
                             </x-nav-link>
-
                             <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
-                                <i class="fas fa-wallet mr-2"></i>
+                                <i class="fas fa-wallet mr-1.5"></i>
                                 {{ __('Accounts') }}
                             </x-nav-link>
-
                             <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
-                                <i class="fas fa-exchange-alt mr-2"></i>
+                                <i class="fas fa-exchange-alt mr-1.5"></i>
                                 {{ __('Transactions') }}
                             </x-nav-link>
-
-                            {{-- !! TAMBAHAN MENU LIABILITIES !! --}}
                             <x-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
-                                <i class="fas fa-file-invoice-dollar mr-2"></i>
+                                <i class="fas fa-file-invoice-dollar mr-1.5"></i>
                                 {{ __('Liabilities') }}
                             </x-nav-link>
-
-                            {{-- !! TAMBAHAN 1 (Desktop Admin) !! --}}
                             <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
                                 request()->routeIs('investment-transactions.*')">
-                                <i class="fas fa-wallet mr-2"></i>
+                                <i class="fas fa-chart-line mr-1.5"></i>
                                 {{ __('Portfolios') }}
                             </x-nav-link>
-
                             <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
-                                <i class="fas fa-chart-pie mr-2"></i>
+                                <i class="fas fa-chart-pie mr-1.5"></i>
                                 {{ __('Budget') }}
                             </x-nav-link>
-
                             <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
-                                <i class="fas fa-brain mr-2"></i>
+                                <i class="fas fa-brain mr-1.5"></i>
                                 {{ __('AI') }}
                             </x-nav-link>
                             <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                                <i class="fas fa-file-download mr-2"></i>
+                                <i class="fas fa-file-download mr-1.5"></i>
                                 {{ __('Reports') }}
                             </x-nav-link>
                         @endif
-                        {{-- Admin Navigation --}}
                     @else
                         {{-- User Navigation (untuk User Biasa) --}}
                         <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                            <i class="fas fa-home mr-2"></i>
+                            <i class="fas fa-home mr-1.5"></i>
                             {{ __('Dashboard') }}
                         </x-nav-link>
-
                         <x-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
-                            <i class="fas fa-wallet mr-2"></i>
+                            <i class="fas fa-wallet mr-1.5"></i>
                             {{ __('Accounts') }}
                         </x-nav-link>
-
                         <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
-                            <i class="fas fa-exchange-alt mr-2"></i>
+                            <i class="fas fa-exchange-alt mr-1.5"></i>
                             {{ __('Transactions') }}
                         </x-nav-link>
-
-                        {{-- !! TAMBAHAN MENU LIABILITIES !! --}}
                         <x-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
-                            <i class="fas fa-file-invoice-dollar mr-2"></i>
+                            <i class="fas fa-file-invoice-dollar mr-1.5"></i>
                             {{ __('Liabilities') }}
                         </x-nav-link>
-
-                        {{-- !! TAMBAHAN 1 (Desktop User) !! --}}
                         <x-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') ||
                             request()->routeIs('investment-transactions.*')">
-                            <i class="fas fa-wallet mr-2"></i>
+                            <i class="fas fa-chart-line mr-1.5"></i>
                             {{ __('Portfolios') }}
                         </x-nav-link>
-
                         <x-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
-                            <i class="fas fa-chart-pie mr-2"></i>
+                            <i class="fas fa-chart-pie mr-1.5"></i>
                             {{ __('Budget') }}
                         </x-nav-link>
-
                         <x-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
-                            <i class="fas fa-brain mr-2"></i>
+                            <i class="fas fa-brain mr-1.5"></i>
                             {{ __('AI') }}
                         </x-nav-link>
                         <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.*')">
-                            <i class="fas fa-file-download mr-2"></i>
+                            <i class="fas fa-file-download mr-1.5"></i>
                             {{ __('Reports') }}
                         </x-nav-link>
                     @endif
                 </div>
             </div>
 
-            <div class="hidden sm:flex sm:items-center sm:ml-6">
+            {{-- Right Controls (Theme Switcher + Profile Dropdown) --}}
+            <div class="hidden sm:flex sm:items-center sm:ml-4 shrink-0 space-x-2">
+                {{-- Theme Switch Button --}}
                 <button id="theme-toggle" type="button"
-                    class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5 mr-4">
+                    class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2">
                     <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
                         xmlns="http://www.w3.org/2000/svg">
                         <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
@@ -288,6 +276,8 @@
                             fill-rule="evenodd" clip-rule="evenodd"></path>
                     </svg>
                 </button>
+
+                {{-- User Dropdown --}}
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
@@ -310,13 +300,12 @@
                                 <i class="fas fa-crown mr-1"></i>
                                 Administrator
                             </div>
-                            @if (request()->routeIs('admin.*'))
+                            @if (request()->routeIs('admin.*', 'assets.*'))
                                 <x-dropdown-link :href="route('dashboard')">
                                     <i class="fas fa-eye mr-2"></i>
                                     {{ __('Switch to User View') }}
                                 </x-dropdown-link>
                             @else
-                                {{-- <x-dropdown-link :href="route('admin.dashboard')"> --}}
                                 <x-dropdown-link :href="route('admin.dashboard')">
                                     <i class="fas fa-tachometer-alt mr-2"></i>
                                     {{ __('Switch to Admin View') }}
@@ -333,8 +322,7 @@
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('logout')"
-                                onclick="event.preventDefault();
-                                                this.closest('form').submit();">
+                                onclick="event.preventDefault(); this.closest('form').submit();">
                                 <i class="fas fa-sign-out-alt mr-2"></i>
                                 {{ __('Log Out') }}
                             </x-dropdown-link>
@@ -343,6 +331,7 @@
                 </x-dropdown>
             </div>
 
+            {{-- Hamburger Mobile Button --}}
             <div class="-mr-2 flex items-center sm:hidden">
                 <button @click="open = ! open"
                     class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400 transition duration-150 ease-in-out">
@@ -358,11 +347,11 @@
         </div>
     </div>
 
+    {{-- Mobile Menu Panel --}}
     <div :class="{ 'block': open, 'hidden': !open }" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
             @if (auth()->user()->isAdmin())
-                {{-- Admin Mobile Navigation --}}
-                @if (request()->routeIs('admin.*'))
+                @if (request()->routeIs('admin.*', 'assets.*'))
                     <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
                         <i class="fas fa-tachometer-alt mr-2"></i>
                         {{ __('Admin Dashboard') }}
@@ -380,7 +369,7 @@
                         {{ __('Assets') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('admin.monitoring.index')" :active="request()->routeIs('admin.monitoring.*')">
-                        <i class="fas fa-tags mr-2"></i>
+                        <i class="fas fa-heartbeat mr-2"></i>
                         {{ __('Monitoring') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('dashboard')" :active="false">
@@ -388,38 +377,30 @@
                         {{ __('User View') }}
                     </x-responsive-nav-link>
                 @else
-                    {{-- User Mobile Navigation (untuk Admin) --}}
                     <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <i class="fas fa-home mr-2"></i>
                         {{ __('Dashboard') }}
                     </x-responsive-nav-link>
-
                     <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
                         <i class="fas fa-wallet mr-2"></i>
                         {{ __('Accounts') }}
                     </x-responsive-nav-link>
-
                     <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                         <i class="fas fa-exchange-alt mr-2"></i>
                         {{ __('Transactions') }}
                     </x-responsive-nav-link>
-
-                    {{-- !! TAMBAHAN MENU LIABILITIES (MOBILE) !! --}}
                     <x-responsive-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
-                        <i class="fas fa-file-invoice-dollar mr-2"></i> {{ __('Liabilities') }}
+                        <i class="fas fa-file-invoice-dollar mr-2"></i>
+                        {{ __('Liabilities') }}
                     </x-responsive-nav-link>
-
-                    {{-- !! TAMBAHAN 1 (Mobile Admin) !! --}}
                     <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
-                        <i class="fas fa-wallet mr-2"></i>
+                        <i class="fas fa-chart-line mr-2"></i>
                         {{ __('Portfolios') }}
                     </x-responsive-nav-link>
-
                     <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                         <i class="fas fa-chart-pie mr-2"></i>
                         {{ __('Budget') }}
                     </x-responsive-nav-link>
-
                     <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                         <i class="fas fa-brain mr-2"></i>
                         {{ __('AI') }}
@@ -429,43 +410,35 @@
                         {{ __('Reports') }}
                     </x-responsive-nav-link>
                     <x-responsive-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                        <i class="fas fa-eye mr-2"></i>
+                        <i class="fas fa-tachometer-alt mr-2"></i>
                         {{ __('Admin View') }}
                     </x-responsive-nav-link>
                 @endif
             @else
-                {{-- User Mobile Navigation (untuk User Biasa) --}}
                 <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                     <i class="fas fa-home mr-2"></i>
                     {{ __('Dashboard') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('accounts.index')" :active="request()->routeIs('accounts.*')">
                     <i class="fas fa-wallet mr-2"></i>
                     {{ __('Accounts') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
                     <i class="fas fa-exchange-alt mr-2"></i>
                     {{ __('Transactions') }}
                 </x-responsive-nav-link>
-
-                {{-- !! TAMBAHAN MENU LIABILITIES (MOBILE) !! --}}
                 <x-responsive-nav-link :href="route('liabilities.index')" :active="request()->routeIs('liabilities.*')">
-                    <i class="fas fa-file-invoice-dollar mr-2"></i> {{ __('Liabilities') }}
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>
+                    {{ __('Liabilities') }}
                 </x-responsive-nav-link>
-
-                {{-- !! TAMBAHAN 1 (Mobile User) !! --}}
                 <x-responsive-nav-link :href="route('portfolios.index')" :active="request()->routeIs('portfolios.*') || request()->routeIs('investment-transactions.*')">
-                    <i class="fas fa-wallet mr-2"></i>
+                    <i class="fas fa-chart-line mr-2"></i>
                     {{ __('Portfolios') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('budgets.index')" :active="request()->routeIs('budgets.*')">
                     <i class="fas fa-chart-pie mr-2"></i>
                     {{ __('Budget') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('ml.index')" :active="request()->routeIs('ml.*')">
                     <i class="fas fa-brain mr-2"></i>
                     {{ __('AI') }}
@@ -483,7 +456,7 @@
                     {{ Auth::user()->name }}
                     @if (auth()->user()->isAdmin())
                         <span
-                            class="ml-2 text-xs px-2 py-1 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">Admin</span>
+                            class="ml-2 text-xs px-2 py-0.5 bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 rounded-full">Admin</span>
                     @endif
                 </div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
@@ -492,15 +465,12 @@
             <div class="mt-3 space-y-1">
                 <div class="px-4 py-2 flex items-center justify-between">
                     <span class="font-medium text-base text-gray-800 dark:text-gray-200">Theme</span>
-                    {{-- Gunakan ID unik tapi class yg sama untuk styling --}}
                     <button id="theme-toggle-mobile" type="button"
-                        class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2.5">
-                        {{-- Salin SVG Dark Mode (Bulan) --}}
+                        class="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-2">
                         <svg id="theme-toggle-dark-icon-mobile" class="hidden w-5 h-5" fill="currentColor"
                             viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
                         </svg>
-                        {{-- Salin SVG Light Mode (Matahari) --}}
                         <svg id="theme-toggle-light-icon-mobile" class="hidden w-5 h-5" fill="currentColor"
                             viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path
@@ -518,8 +488,7 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
-                        onclick="event.preventDefault();
-                                        this.closest('form').submit();">
+                        onclick="event.preventDefault(); this.closest('form').submit();">
                         <i class="fas fa-sign-out-alt mr-2"></i>
                         {{ __('Log Out') }}
                     </x-responsive-nav-link>

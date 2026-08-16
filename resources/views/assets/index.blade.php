@@ -12,163 +12,215 @@
         </div>
     </x-slot>
 
+    {{-- Container Konten (Jarak Konsisten) --}}
+    <div class="space-y-6">
 
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-        <div class="p-6">
-            <form method="GET" action="{{ route('assets.index') }}" class="space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {{-- Filter Assets Card --}}
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg" x-data="{ showFilters: {{ request()->hasAny(['search', 'type', 'unit']) ? 'true' : 'false' }} }">
 
-                    <div class="lg:col-span-2">
-                        <label for="search" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Search Asset (Code or Name)
-                        </label>
-                        <div class="relative mt-1">
-                            <input type="text" name="search" id="search" value="{{ request('search') }}"
-                                class="block w-full py-2 px-3 shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-200"
-                                placeholder="BBCA, Emas Antam, Batavia Dana Saham...">
-                        </div>
+            <div class="p-6">
+                {{-- Header Filter (Collapsible Trigger) --}}
+                <div class="flex items-center justify-between cursor-pointer" @click="showFilters = !showFilters">
+                    <div class="flex items-center">
+                        <i class="fas fa-filter text-gray-500 dark:text-gray-400 mr-2"></i>
+                        <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                            Filter Assets
+                        </h3>
+                        {{-- Badge Indikator Filter Aktif --}}
+                        @if (request()->hasAny(['search', 'type', 'unit']))
+                            <span
+                                class="ml-3 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                Active
+                            </span>
+                        @endif
                     </div>
 
-                    <div>
-                        <label for="type"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
-                        <select name="type" id="type"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
-                            <option value="">All Types</option>
-                            @foreach ($assetTypes as $type)
-                                <option value="{{ $type }}" {{ request('type') === $type ? 'selected' : '' }}>
-                                    {{ Str::title(str_replace('_', ' ', $type)) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <label for="unit"
-                            class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
-                        <select name="unit" id="unit"
-                            class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
-                            <option value="">All Units</option>
-                            @foreach ($priceUnits as $unit)
-                                <option value="{{ $unit }}" {{ request('unit') === $unit ? 'selected' : '' }}>
-                                    {{ ucfirst($unit) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                </div>
-
-                <div class="flex space-x-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
-                        <i class="fas fa-filter mr-2"></i>
-                        Apply Filter
+                    {{-- Ikon Panah --}}
+                    <button type="button"
+                        class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition-transform duration-200"
+                        :class="{ 'rotate-180': showFilters }">
+                        <i class="fas fa-chevron-down"></i>
                     </button>
-                    <a href="{{ route('assets.index') }}"
-                        class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
-                        <i class="fas fa-times mr-2"></i>
-                        Clear
-                    </a>
-                </div>
-            </form>
-        </div>
-    </div>
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 sm:p-8">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    {{-- Table Header --}}
-                    <thead class="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Code</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Name</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Type</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Unit</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Current Price</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Last Update</th>
-                            <th scope="col"
-                                class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                Action</th>
-                        </tr>
-                    </thead>
-                    {{-- Table Body --}}
-                    <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        @forelse($assets as $asset)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
-                                        {{ $asset->code }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                        {{ $asset->name }}</div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">{{ $asset->issuer }}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {{ Str::title(str_replace('_', ' ', $asset->asset_type)) }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $asset->price_unit }}
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 dark:text-green-400">
-                                    Rp {{ number_format($asset->current_price, 2, ',', '.') }}
-                                </td>
-                                <td
-                                    class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $asset->price_last_updated_at ? $asset->price_last_updated_at->format('M d, H:i') : 'N/A' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('assets.edit', $asset) }}"
-                                        class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
-                                        <i class="fas fa-edit mr-2"></i>
-                                    </a>
-                                    <form method="POST" action="{{ route('assets.destroy', $asset) }}"
-                                        class="inline delete-form">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                            class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
-                                            title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7"
-                                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
-                                    No assets found matching your criteria.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-
-                <div class="px-6 py-4">
-                    {{ $assets->appends(request()->except('page'))->links() }}
                 </div>
 
+                {{-- Form Filter Content --}}
+                <div x-show="showFilters" x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 transform -translate-y-2"
+                    x-transition:enter-end="opacity-100 transform translate-y-0"
+                    x-transition:leave="transition ease-in duration-150"
+                    x-transition:leave-start="opacity-100 transform translate-y-0"
+                    x-transition:leave-end="opacity-0 transform -translate-y-2"
+                    class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+
+                    <form method="GET" action="{{ route('assets.index') }}">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+
+                            {{-- Search Input (4 Kolom) --}}
+                            <div class="sm:col-span-2 lg:col-span-4">
+                                <label for="search"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Search Asset (Code or Name)
+                                </label>
+                                <div class="relative mt-1">
+                                    <input type="text" name="search" id="search" value="{{ request('search') }}"
+                                        class="block w-full py-2 px-3 shadow-sm sm:text-sm border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-gray-200"
+                                        placeholder="BBCA, Emas Antam, Batavia Dana Saham...">
+                                </div>
+                            </div>
+
+                            {{-- Asset Type (3 Kolom) --}}
+                            <div class="lg:col-span-3">
+                                <label for="type"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Type</label>
+                                <select name="type" id="type"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                    <option value="">All Types</option>
+                                    @foreach ($assetTypes as $type)
+                                        <option value="{{ $type }}"
+                                            {{ request('type') === $type ? 'selected' : '' }}>
+                                            {{ Str::title(str_replace('_', ' ', $type)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Price Unit (2 Kolom) --}}
+                            <div class="lg:col-span-2">
+                                <label for="unit"
+                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300">Unit</label>
+                                <select name="unit" id="unit"
+                                    class="mt-1 block w-full py-2 px-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 rounded-md shadow-sm sm:text-sm dark:text-gray-200">
+                                    <option value="">All Units</option>
+                                    @foreach ($priceUnits as $unit)
+                                        <option value="{{ $unit }}"
+                                            {{ request('unit') === $unit ? 'selected' : '' }}>
+                                            {{ ucfirst($unit) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- Tombol Asli (Tanpa Merubah Class, Padding, Maupun Icon) --}}
+                            <div class="sm:col-span-2 lg:col-span-3 flex items-center justify-end space-x-2 pb-0.5">
+                                <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
+                                    <i class="fas fa-filter mr-2"></i>
+                                    Apply Filter
+                                </button>
+                                <a href="{{ route('assets.index') }}"
+                                    class="inline-flex items-center px-4 py-2 bg-gray-300 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500">
+                                    <i class="fas fa-times mr-2"></i>
+                                    Clear
+                                </a>
+                            </div>
+
+                        </div>
+                    </form>
+
+                </div>
             </div>
         </div>
+
+        {{-- Table Assets Card --}}
+        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="p-6 sm:p-8">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        {{-- Table Header --}}
+                        <thead class="bg-gray-50 dark:bg-gray-700">
+                            <tr>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Code</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Name</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Type</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Unit</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Current Price</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Last Update</th>
+                                <th scope="col"
+                                    class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                    Action</th>
+                            </tr>
+                        </thead>
+                        {{-- Table Body --}}
+                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            @forelse($assets as $asset)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                            {{ $asset->code }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                            {{ $asset->name }}</div>
+                                        <div class="text-sm text-gray-500 dark:text-gray-400">{{ $asset->issuer }}
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ Str::title(str_replace('_', ' ', $asset->asset_type)) }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $asset->price_unit }}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-green-600 dark:text-green-400">
+                                        Rp {{ number_format($asset->current_price, 2, ',', '.') }}
+                                    </td>
+                                    <td
+                                        class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 dark:text-gray-400">
+                                        {{ $asset->price_last_updated_at ? $asset->price_last_updated_at->format('M d, H:i') : 'N/A' }}
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{{ route('assets.edit', $asset) }}"
+                                            class="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300">
+                                            <i class="fas fa-edit mr-2"></i>
+                                        </a>
+                                        <form method="POST" action="{{ route('assets.destroy', $asset) }}"
+                                            class="inline delete-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                                                title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="7"
+                                        class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 text-center">
+                                        No assets found matching your criteria.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    <div class="px-6 py-4">
+                        {{ $assets->appends(request()->except('page'))->links() }}
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    {{-- SweetAlert Delete Confirmation Script --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const deleteForms = document.querySelectorAll('.delete-form');

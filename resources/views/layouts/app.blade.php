@@ -408,6 +408,144 @@
                 }); @endif
         });
     </script> --}}
+
+    <script>
+        // Fungsi pembantu untuk menampilkan SweetAlert2 dengan icon custom
+        function showSweetLoader(title, subtext, iconClass, iconColor = 'text-blue-500') {
+            // 1. Cek apakah halaman sedang dalam Mode Gelap
+            const isDark = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
+
+            // 2. Tentukan skema warna dinamis
+            const bgColor = isDark ? '#111827' : '#FFFFFF';
+            const titleColor = isDark ? '#F9FAFB' : '#111827';
+            const subColor = isDark ? '#9CA3AF' : '#6B7280';
+            const borderColor = isDark ? 'border-gray-800' : 'border-gray-100 shadow-xl';
+
+            Swal.fire({
+                html: `
+            <div class="flex flex-col items-center justify-center pt-2">
+                <div class="mb-4">
+                    <i class="${iconClass} text-4xl ${iconColor} animate-pulse"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-1" style="color: ${titleColor};">${title}</h3>
+                <p class="text-xs font-medium" style="color: ${subColor};">${subtext}</p>
+            </div>
+        `,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                background: bgColor,
+                customClass: {
+                    popup: `rounded-2xl border ${borderColor}`
+                },
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+        }
+
+        function hideSweetLoader() {
+            if (Swal.isVisible()) {
+                Swal.close();
+            }
+        }
+
+        // 1. Deteksi Navigasi Menu & Link secara Dinamis
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (
+                link &&
+                link.href &&
+                !link.href.startsWith('#') &&
+                !link.href.startsWith('javascript:') &&
+                link.target !== '_blank' &&
+                !link.hasAttribute('download')
+            ) {
+                if (link.hostname === window.location.hostname) {
+                    const path = link.pathname.toLowerCase();
+                    const linkText = link.innerText.trim();
+
+                    // Pemetaan konteks berdasarkan rute / teks menu
+                    if (path.includes('dashboard') || linkText.toLowerCase() === 'home') {
+                        showSweetLoader('Memuat Dashboard', 'Menyiapkan ringkasan keuangan', 'fas fa-home',
+                            'text-blue-400');
+                    } else if (path.includes('account') || linkText.toLowerCase() === 'accts') {
+                        showSweetLoader('Memuat Akun / Dompet', 'Mengambil data saldo rekening', 'fas fa-wallet',
+                            'text-emerald-400');
+                    } else if (path.includes('transaction') || linkText.toLowerCase() === 'trx') {
+                        if (path.includes('create')) {
+                            showSweetLoader('Form Transaksi', 'Membuka pencatatan transaksi baru',
+                                'fas fa-plus-circle', 'text-blue-400');
+                        } else {
+                            showSweetLoader('Riwayat Transaksi', 'Mengambil catatan mutasi kas',
+                                'fas fa-exchange-alt', 'text-indigo-400');
+                        }
+                    } else if (path.includes('liabilit') || linkText.toLowerCase() === 'debt') {
+                        showSweetLoader('Daftar Hutang & Piutang', 'Menyiapkan data tagihan',
+                            'fas fa-file-invoice-dollar', 'text-rose-400');
+                    } else if (path.includes('portfolio') || path.includes('invest') || linkText.toLowerCase() ===
+                        'invest') {
+                        showSweetLoader('Portofolio Investasi', 'Menghitung performa aset', 'fas fa-chart-line',
+                            'text-amber-400');
+                    } else if (path.includes('ml') || linkText.toLowerCase() === 'ai') {
+                        showSweetLoader('Artafis AI Insight', 'Menganalisis pola finansial', 'fas fa-brain',
+                            'text-purple-400');
+                    } else if (path.includes('admin')) {
+                        showSweetLoader('Panel Administrator', 'Membuka konfigurasi sistem', 'fas fa-shield-alt',
+                            'text-purple-400');
+                    } else {
+                        const fallbackTitle = linkText ? `Membuka ${linkText}` : 'Memuat Halaman...';
+                        showSweetLoader(fallbackTitle, 'Mohon tunggu sebentar', 'fas fa-spinner', 'text-amber-400');
+                    }
+                }
+            }
+        });
+
+        // 2. Deteksi Submit Form (Simpan, Update, Hapus, Logout)
+        document.addEventListener('submit', function(e) {
+            if (e.target.classList.contains('no-loader')) return;
+
+            const action = (e.target.getAttribute('action') || '').toLowerCase();
+            const submitBtn = e.target.querySelector('button[type="submit"], input[type="submit"]');
+            const btnText = submitBtn ? submitBtn.innerText.trim().toLowerCase() : '';
+
+            if (action.includes('logout') || btnText.includes('logout') || btnText.includes('keluar')) {
+                showSweetLoader('Keluar Sesi', 'Mengamankan akun Anda...', 'fas fa-sign-out-alt', 'text-rose-400');
+            } else if (action.includes('login') || btnText.includes('login') || btnText.includes('masuk')) {
+                showSweetLoader('Autentikasi', 'Memverifikasi akun Anda...', 'fas fa-user-lock', 'text-blue-400');
+            } else if (btnText.includes('hapus') || btnText.includes('delete')) {
+                showSweetLoader('Menghapus Data', 'Memproses penghapusan data...', 'fas fa-trash-alt',
+                    'text-rose-400');
+            } else {
+                showSweetLoader('Menyimpan Data', 'Sedang memproses transaksi Anda...', 'fas fa-save',
+                    'text-emerald-400');
+            }
+        });
+
+        // 3. Tutup loader saat halaman selesai render / kembali via Back
+        window.addEventListener('pageshow', function() {
+            hideSweetLoader();
+        });
+
+        // 4. Integrasi Axios AJAX
+        if (window.axios) {
+            window.axios.interceptors.request.use(config => {
+                showSweetLoader('Sinkronisasi', 'Mengirim data ke server...', 'fas fa-sync', 'text-amber-400');
+                return config;
+            });
+            window.axios.interceptors.response.use(
+                response => {
+                    hideSweetLoader();
+                    return response;
+                },
+                error => {
+                    hideSweetLoader();
+                    return Promise.reject(error);
+                }
+            );
+        }
+    </script>
+
     <!-- Custom Scripts Stack -->
     @stack('scripts')
 </body>

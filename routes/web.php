@@ -81,7 +81,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('investment-transactions', InvestmentTransactionController::class)->except(['index', 'show']);
 });
 
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 
     // Rute CRUD untuk Aset (untuk update harga manual)
     // Kita mungkin hanya butuh index, edit, update
