@@ -140,12 +140,12 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center min-w-0">
-                {{-- Logo / Brand --}}
+                {{-- 1. Logo / Brand Artafis --}}
                 <div class="shrink-0 flex items-center">
                     <a href="{{ auth()->user()->isAdmin() ? route('admin.dashboard') : route('dashboard') }}"
                         class="flex items-center">
                         <span class="text-xl font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                            💰 FinanceTracker
+                            💰 Artafis
                         </span>
                         @if (auth()->user()->isAdmin())
                             <span
